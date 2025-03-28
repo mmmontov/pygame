@@ -1,7 +1,7 @@
 import pygame
 import random
 
-image_path = '/data/data/com.misha.myapp/files/app/'
+image_path = ''
 
 clock = pygame.time.Clock()
 
