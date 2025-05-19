@@ -93,8 +93,8 @@ class Game:
                 self.player = Player(self.all_sprites, (obj.x, obj.y), self.collision_sprites)
                 self.gun = Gun(self.all_sprites, self.player)
             else:
-                self.spawn_positions.append((obj.x, obj.y))       
-    # ============================================== 
+                self.spawn_positions.append((obj.x, obj.y))
+    # ==============================================
     
     def bullet_collisions(self):
         if self.bullet_sprites:
@@ -108,7 +108,7 @@ class Game:
     
     def player_collisions(self):
         if pygame.sprite.spritecollide(self.player, self.enemy_sprites, False, pygame.sprite.collide_mask):
-            self.running = False
+            self.running = True
     
     def run(self):
         while self.running:

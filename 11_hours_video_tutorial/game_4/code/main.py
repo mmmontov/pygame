@@ -81,7 +81,7 @@ class Game:
                     sprite.destroy()
                     
         if pygame.sprite.spritecollide(self.player, self.enemy_sprites, False, pygame.sprite.collide_mask):
-            self.running = False
+            self.running = True
         
     def run(self):
         dt = self.clock.tick(FRAMERATE) / 10000
