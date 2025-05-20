@@ -3,7 +3,6 @@ from settings import *
 
 class Scope:
     def __init__(self):
-        pg.mouse.set_visible(False)
 
         self.radius = SCOPE_RADIUS
         self.color = COLORS['scope']
@@ -13,6 +12,7 @@ class Scope:
         self.pos.update(mouse_pos)
 
     def draw(self, surface):
+        pg.mouse.set_visible(False)
         pg.draw.line(surface, self.color, 
                      (self.pos.x - self.radius//2, self.pos.y), 
                      (self.pos.x + self.radius//2, self.pos.y),

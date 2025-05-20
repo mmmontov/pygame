@@ -6,6 +6,7 @@ class Player(pg.sprite.Sprite):
     def __init__(self, pos: tuple[int]):
         super().__init__()
 
+        self.start_pos = pos
         self.max_health = game_state.player_health
         self.speed = PLAYER_SPEED
         self.color = COLORS['player']
@@ -22,8 +23,9 @@ class Player(pg.sprite.Sprite):
     def die(self):
         game_state.save_last_game_score()
         game_state.reset() 
+        self.rect.center = self.start_pos
         game_state.current_screen = 'game_over'  
-
+    
 
     def update(self, keys_pressed):
         self.health = game_state.player_health

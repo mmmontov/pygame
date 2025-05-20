@@ -31,7 +31,7 @@ def main():
             if event.type == pg.QUIT:
                 running = False
 
-            if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            if event.type == pg.MOUSEBUTTONDOWN and event.button == 1 and game_state.current_screen == 'game':
                 direction = pg.Vector2(pg.mouse.get_pos()) - player.rect.center
                 bullets.append(Bullet(player.rect.center, direction))
 
@@ -41,12 +41,17 @@ def main():
         if game_state.current_screen == 'game':
             ui = GameUi()
             # === обновления ===
+            # for event in pg.event.get():
+            #     if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            #         direction = pg.Vector2(pg.mouse.get_pos()) - player.rect.center
+            #         bullets.append(Bullet(player.rect.center, direction))
+
             for bullet in bullets:
                 bullet.update()
                 if bullet.pos.x > SCREEN_WIDTH or bullet.pos.x < 0 or bullet.pos.y < 0 or bullet.pos.y > SCREEN_HEIGHT:
                     bullets.remove(bullet)
 
-            if enemy_timer > 100:
+            if enemy_timer > 50:
                 enemies.append(Enemy())
                 enemy_timer = 0
             enemy_timer += 1
@@ -67,13 +72,23 @@ def main():
             # === отрисовка ===
             draw_game_screen(screen, bullets, enemies, scope, player, ui)
 
+
         elif game_state.current_screen == 'game_over':
+            bullets.clear()
+            enemies.clear()
+            player = None
             ui = GameOverUi()
-            # === обновления ===
-            pass
             # === отрисовка ===
-            draw_game_over_screen(screen, ui)
-            
+            buttons = ui.draw_ui(screen)
+            # === обновления ===
+            for event in pg.event.get():
+                for button in buttons.values():
+                    if button.collidepoint(mouse):
+                        # сделать класс для создания кнопки и создать ее сюда
+                        if pg.mouse.get_pressed()[0]:
+                            game_state.reset()
+                            game_state.current_screen = 'game'
+        
 
 
         pg.display.flip()

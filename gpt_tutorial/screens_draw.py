@@ -17,7 +17,7 @@ def draw_game_screen(screen, bullets: list[Bullet], enemies: list[Enemy], scope:
     ui.draw_ui(screen)
 
 
-def draw_game_over_screen(screen, ui: GameOverUi):
-    screen.fill(COLORS['bg'])
-    ui.draw_ui(screen)
-    
+# def draw_game_over_screen(screen, ui: GameOverUi):
+#     screen.fill(COLORS['bg'])
+#     buttons = ui.draw_ui(screen)
+#     return buttons
