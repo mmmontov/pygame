@@ -1,18 +1,31 @@
 from settings import *
 from ui import *
 
-class Menu:
+class MainMenu:
     def __init__(self, game):
         self.game = game
         self.display_surface = pygame.display.get_surface()
         self.font = pygame.font.Font(None, 50)
-        self.text = 'main_menu'
+
         
-        self.buttons = []
+
+    def on_enter(self):
         self.create_buttons()
+
+    def draw(self):
+        self.display_surface.fill('#B2CD9C')
+        
+        self.game.buttons_sprites.draw(self.display_surface)
+
+    def update(self, dt):
+        self.game.buttons_sprites.update(dt)
+
+
+class Menu(MainMenu):
+    
+    state_name = 'main_menu'
     
     def create_buttons(self):
-
         # new game
         self.start_game_button = Button(
             groups=(self.game.buttons_sprites),
@@ -23,7 +36,6 @@ class Menu:
             bg_color='#CA7842',
             text_color='#4B352A'
         )
-        self.buttons.append(self.start_game_button)
 
         # settings
         self.settings_button = Button(
@@ -35,7 +47,6 @@ class Menu:
             bg_color='#CA7842',
             text_color='#4B352A'
         )
-        self.buttons.append(self.settings_button)
 
         # exit game
         self.exit_button = Button(
@@ -47,55 +58,52 @@ class Menu:
             bg_color='#CA7842',
             text_color='#4B352A'
         )
-        self.buttons.append(self.exit_button)
-        # доделать отображение кнопок
-    
-    def draw(self):
-        self.display_surface.fill('#B2CD9C')
 
-        text = self.font.render(self.text, True, '#4B352A')
-        self.display_surface.blit(text, (WINDOW_WIDTH/2, 0))
-    
-    def update(self, dt):
+
+    def input(self):
         # keys = pygame.key.get_just_pressed()
 
         if self.start_game_button.is_clicked():
             self.text = 'game started'
-            print('start game click')
-        
+     
         if self.settings_button.is_clicked():
             self.text = 'settings'
-            self.game.current_state = self.game.states['settings']
-            # self.game.buttons_sprites.empty()
-            for button in self.buttons:
-                button.visible = False
-            print('settings button click')
+            self.game.change_state('settings')
 
         if self.exit_button.is_clicked():
             self.game.running = False
             
-        
-class Settings:
-    def __init__(self, game):
-        self.game = game
-        self.display_surface = pygame.display.get_surface()
-        self.font = pygame.font.Font(None, 50)
-        self.text = 'settings'
-
-        self.create_buttons()
-
-    def create_buttons(self):
-        pass
 
 
-    def draw(self):
-        self.display_surface.fill('#B2CD9C')
-
-        text = self.font.render(self.text, True, '#4B352A')
-        self.display_surface.blit(text, (WINDOW_WIDTH/2, 0))
-    
     def update(self, dt):
+        super().update(dt)
+        self.input()
+            
+      
+        
+class Settings(MainMenu):
+    state_name = 'settings'
+    
+    def create_buttons(self):
+        
+        # volume
+        self.volume_slider = Slider(
+            groups=self.game.buttons_sprites,
+            pos=(WINDOW_WIDTH/2, WINDOW_HEIGHT//3),
+            size=(300, 10),
+            initial_value=self.game.volume
+        )
+
+
+    def input(self):
         keys = pygame.key.get_just_pressed()
 
         if keys[pygame.K_ESCAPE]:
-            self.game.current_state = self.game.states['main_menu']
+            self.game.change_state('main_menu')
+            self.text = 'mian_menu'
+        
+        self.game.volume = self.volume_slider.get_value()
+
+    def update(self, dt):
+        super().update(dt)
+        self.input()
