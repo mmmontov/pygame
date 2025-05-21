@@ -12,14 +12,15 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
         
-        # sprite groups
+        # sprite groups5
         self.all_sprites = pygame.sprite.Group()
         self.collision_sprites = pygame.sprite.Group()
         self.buttons_sprites = pygame.sprite.Group()
         
         # game states
         self.states = {
-            'main_menu': states.menu.Menu(self)
+            'main_menu': states.menu.Menu(self),
+            'settings': states.menu.Settings(self),
         }
         self.current_state = self.states['main_menu']
         

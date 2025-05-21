@@ -10,6 +10,7 @@ class Button(pygame.sprite.Sprite):
         self.font = font
         self.bg_color = bg_color
         self.text_color = text_color
+        self.visible = True
         
         self.image = pygame.Surface(size)
         self.rect = self.image.get_frect(center = pos)
@@ -25,8 +26,9 @@ class Button(pygame.sprite.Sprite):
      
         
     def render_text(self):
-        self.image.fill(self.bg_color)
-        text_surf = self.font.render(self.text, True, self.text_color)
-        text_rect = text_surf.get_frect(center=(self.size[0]/2, self.size[1]/2))
-        self.image.blit(text_surf, text_rect)
+        if self.visible:
+            self.image.fill(self.bg_color)
+            text_surf = self.font.render(self.text, True, self.text_color)
+            text_rect = text_surf.get_frect(center=(self.size[0]/2, self.size[1]/2))
+            self.image.blit(text_surf, text_rect)
         
