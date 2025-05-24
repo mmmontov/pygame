@@ -2,6 +2,7 @@ from settings import *
 
 import states
 import states.menu
+from ui import *
 
 class Game:
     def __init__(self):
@@ -23,8 +24,18 @@ class Game:
             'settings': states.menu.Settings(self),
         }
         self.current_state = self.states['main_menu']
+        self.current_state.on_enter() 
         
+        # sounds
+        self.volume = 0.5
         
+    def change_state(self, new_state: str):
+        self.buttons_sprites.empty()
+        
+        self.current_state = self.states[new_state]
+        self.current_state.on_enter()    
+
+
     def run(self):
         while self.running:
             dt = self.clock.tick(FRAMERATE) / 1000
@@ -42,7 +53,6 @@ class Game:
             self.display_surface.fill('black')
             self.current_state.draw()
             self.all_sprites.draw(self.display_surface)
-            self.buttons_sprites.draw(self.display_surface)
             pygame.display.update()
             
         pygame.quit()
@@ -51,5 +61,3 @@ class Game:
 if __name__ == '__main__':
     game = Game()
     game.run()
-            
-        
