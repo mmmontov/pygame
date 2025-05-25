@@ -39,7 +39,8 @@ class Button(pygame.sprite.Sprite):
 class Slider(pygame.sprite.Sprite):
     def __init__(self, groups, pos: tuple[int], size=(200, 10), 
                  min_value=0.0, max_value=1.0, initial_value=0.5,
-                 color_bg='#cccccc', color_fg='#CA7842', handle_color='#4B352A'):
+                 color_bg='#cccccc', color_fg='#CA7842', handle_color='#4B352A',
+                 label_text: str = '', label_font: pygame.Font = None, label_color='black'):
         super().__init__(groups)
 
         # параметры
@@ -53,27 +54,56 @@ class Slider(pygame.sprite.Sprite):
         self.color_fg = color_fg
         self.handle_color = handle_color
 
+        # текстовая метка
+        self.label_text = label_text
+        self.label_font = label_font
+        self.label_color = label_color
+
+        # если есть текст, рендерим его
+        self.label_surf = None
+        self.label_rect = None
+        label_width = 0
+        if self.label_text and self.label_font:
+            self.label_surf = self.label_font.render(self.label_text, True, self.label_color)
+            self.label_rect = self.label_surf.get_frect(midright=(0, self.height // 2 + 5))
+            label_width = self.label_rect.width + 10  # отступ справа
+
         # поверхность и прямоугольник
-        self.image = pygame.Surface((self.width, self.height + 10), pygame.SRCALPHA)
+        total_width = self.width + label_width
+        self.image = pygame.Surface((total_width, self.height + 10), pygame.SRCALPHA)
         self.rect = self.image.get_frect(center=pos)
 
         # внутреннее состояние
         self.dragging = False
 
+        self.label_width = label_width
         self.update_slider()
 
     def update_slider(self):
         self.image.fill((0, 0, 0, 0))  # очистка с прозрачностью
 
+        # если есть текст, рисуем его
+        if self.label_surf:
+            self.image.blit(self.label_surf, (0, (self.image.get_height() - self.label_surf.get_height()) // 2))
+
         # координаты прогресса
         progress_width = int((self.value - self.min_value) / (self.max_value - self.min_value) * self.width)
 
         # фон
-        pygame.draw.rect(self.image, self.color_bg, (0, self.height // 2, self.width, self.height), border_radius=5)
+        pygame.draw.rect(
+            self.image, self.color_bg,
+            (self.label_width, self.height // 2, self.width, self.height), border_radius=5
+        )
         # активная часть
-        pygame.draw.rect(self.image, self.color_fg, (0, self.height // 2, progress_width, self.height), border_radius=5)
+        pygame.draw.rect(
+            self.image, self.color_fg,
+            (self.label_width, self.height // 2, progress_width, self.height), border_radius=5
+        )
         # ползунок
-        pygame.draw.circle(self.image, self.handle_color, (progress_width, self.height // 2 + self.height // 2), 8)
+        pygame.draw.circle(
+            self.image, self.handle_color,
+            (self.label_width + progress_width, self.height // 2 + self.height // 2), 8
+        )
 
     def get_value(self):
         return self.value
@@ -89,11 +119,10 @@ class Slider(pygame.sprite.Sprite):
             self.dragging = True
 
         if self.dragging:
-            rel_x = mouse_pos[0] - self.rect.left
+            rel_x = mouse_pos[0] - self.rect.left - self.label_width
             rel_x = max(0, min(self.width, rel_x))
             self.value = self.min_value + (rel_x / self.width) * (self.max_value - self.min_value)
             self.update_slider()
-
 
     def update(self, dt):
         self.input()

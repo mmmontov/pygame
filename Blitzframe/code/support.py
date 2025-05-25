@@ -1,4 +1,6 @@
 from settings import *
+import time
+
 
 class Timer:
 
@@ -46,3 +48,96 @@ def audio_importer(*path):
         for file_name in file_names:
             audio_dict[file_name.split('.')[0]] = pygame.mixer.Sound(join(folder_path, file_name))
     return audio_dict
+
+
+def transition_effect(surface: pygame.Surface, callback: callable, fade_speed=20, hold_time=0.3, draw_callback=None):
+    clock = pygame.time.Clock()
+    fade_overlay = pygame.Surface(surface.get_size()).convert_alpha()
+
+    # затемнение
+    for alpha in range(0, 256, fade_speed):
+        if draw_callback:
+            draw_callback()  
+        fade_overlay.fill((0, 0, 0, alpha))
+        surface.blit(fade_overlay, (0, 0))
+        pygame.display.update()
+        clock.tick(60)
+
+    # фкнции
+    callback()
+
+    # Задержка
+    fade_overlay.fill((0, 0, 0, 255))
+    surface.blit(fade_overlay, (0, 0))
+    pygame.display.update()
+    start_time = time.time()
+    while time.time() - start_time < hold_time:
+        clock.tick(60)
+
+    # осветление
+    for alpha in range(255, -1, -fade_speed):
+        if draw_callback:
+            draw_callback() 
+        fade_overlay.fill((0, 0, 0, alpha))
+        surface.blit(fade_overlay, (0, 0))
+        pygame.display.update()
+        clock.tick(60)
+        
+class FadeText:
+	"""
+	Класс для плавного появления и исчезновения текста без блокировки основного цикла игры.
+	Используйте методы start() и update(surface) в игровом цикле.
+	"""
+
+	def __init__(self, text, font, color, pos, appear_speed=5, hold_time=1.0, disappear_speed=5, background_draw=None):
+		self.text = text
+		self.font = font
+		self.color = color
+		self.pos = pos
+		self.appear_speed = appear_speed
+		self.hold_time = hold_time
+		self.disappear_speed = disappear_speed
+		self.background_draw = background_draw
+
+		self.base_surf = self.font.render(self.text, True, self.color)
+		self.text_surf = self.base_surf.convert_alpha()
+		self.text_rect = self.text_surf.get_rect(center=self.pos)
+
+		self.state = 'idle'  # 'appearing', 'holding', 'disappearing', 'done'
+		self.alpha = 0
+		self.start_time = 0
+
+	def start(self):
+		self.state = 'appearing'
+		self.alpha = 0
+		self.start_time = time.time()
+
+	def update(self, surface):
+		if self.state == 'idle' or self.state == 'done':
+			return
+
+		if self.background_draw:
+			self.background_draw()
+
+		if self.state == 'appearing':
+			self.alpha += self.appear_speed
+			if self.alpha >= 255:
+				self.alpha = 255
+				self.state = 'holding'
+				self.start_time = time.time()
+			self.text_surf.set_alpha(self.alpha)
+			surface.blit(self.text_surf, self.text_rect)
+
+		elif self.state == 'holding':
+			self.text_surf.set_alpha(255)
+			surface.blit(self.text_surf, self.text_rect)
+			if time.time() - self.start_time >= self.hold_time:
+				self.state = 'disappearing'
+
+		elif self.state == 'disappearing':
+			self.alpha -= self.disappear_speed
+			if self.alpha <= 0:
+				self.alpha = 0
+				self.state = 'done'
+			self.text_surf.set_alpha(self.alpha)
+			surface.blit(self.text_surf, self.text_rect)

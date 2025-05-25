@@ -1,5 +1,6 @@
 from settings import *
 from ui import *
+from support import *
 
 class MainMenu:
     def __init__(self, game):
@@ -64,10 +65,9 @@ class Menu(MainMenu):
         # keys = pygame.key.get_just_pressed()
 
         if self.start_game_button.is_clicked():
-            self.text = 'game started'
+            self.game.change_state('gameplay')
      
         if self.settings_button.is_clicked():
-            self.text = 'settings'
             self.game.change_state('settings')
 
         if self.exit_button.is_clicked():
@@ -91,7 +91,9 @@ class Settings(MainMenu):
             groups=self.game.buttons_sprites,
             pos=(WINDOW_WIDTH/2, WINDOW_HEIGHT//3),
             size=(300, 10),
-            initial_value=self.game.volume
+            initial_value=self.game.volume,
+            label_text='Volume:',
+            label_font=self.font
         )
 
 
