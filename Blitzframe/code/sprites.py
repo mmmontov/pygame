@@ -11,19 +11,19 @@ class Sprite(pygame.sprite.Sprite):
 
 class AnimatedSprite(Sprite):
     def __init__(self, groups, pos, frames):
-        self.frames, self.frame_index, self.animation_speed = frames, 0, 10
+        self.frames, self.frame_index, self.animation_speed = frames, 0, 5
         super().__init__(groups, pos, self.frames[str(self.frame_index)])
         
     def animate(self, dt):
         self.frame_index += self.animation_speed * dt
-        self.image = self.frames[int(self.frame_index)%len(self.frames)]
+        # print(self.frames, int(self.frame_index)%len(self.frames))
+        self.image = self.frames[str(int(self.frame_index)%len(self.frames))]
         
 
 
 class Player(AnimatedSprite):
     def __init__(self, groups, pos, collision_sprites, frames):
         super().__init__(groups, pos, frames) 
-        self.load_images()
         self.state, self.frame_index = 'down', 0
         
         self.image = pygame.image.load('images/player/down/0.png').convert_alpha()
@@ -39,17 +39,6 @@ class Player(AnimatedSprite):
         
         self.collision_sprites = collision_sprites
         
-    def load_images(self):
-        self.frames = {'left': [], 'right': [], 'up': [], 'down': []}
-        
-        for state in self.frames.keys():
-        
-            for folder_path, sub_folders, file_names in walk(join('images', 'player', state)):
-                if file_names:
-                    for file_name in sorted(file_names, key=lambda x: int(x.split('.')[0])):
-                        full_path = join(folder_path, file_name)
-                        surf = pygame.image.load(full_path).convert_alpha()
-                        self.frames[state].append(surf)
                              
     def input(self):
         keys = pygame.key.get_pressed()
@@ -99,3 +88,68 @@ class Player(AnimatedSprite):
         self.input()
         self.move(dt)
         # self.animate(dt)
+        
+        
+class Enemy(AnimatedSprite):
+    def __init__(self, groups, pos, frames, player, collision_sprites):
+        super().__init__(groups, pos, frames)
+        self.death_timer = Timer(200, func=self.kill)
+        self.player = player
+        self.speed = 100
+    
+        # rect
+        self.hitbox_rect = self.rect.inflate(-20, -40)
+        self.collision_sprites = collision_sprites
+        self.direction = pygame.Vector2()
+    
+
+    def destroy(self):
+        self.death_timer.activate()
+        self.animation_speed = 0
+        self.image = pygame.mask.from_surface(self.image).to_surface()
+        self.image.set_colorkey('black')
+    
+    def collision(self, direction):
+        for sprite in self.collision_sprites:
+            if sprite.rect.colliderect(self.hitbox_rect):
+                if direction == 'horizontal':
+                    if self.direction.x > 0: self.hitbox_rect.right = sprite.rect.left
+                    if self.direction.x < 0: self.hitbox_rect.left = sprite.rect.right
+                else:
+                    if self.direction.y > 0: self.hitbox_rect.bottom = sprite.rect.top
+                    if self.direction.y < 0: self.hitbox_rect.top = sprite.rect.bottom
+    
+    def move(self, dt):
+        # get direction
+        player_pos = pygame.Vector2(self.player.rect.center) 
+        enemy_pos = pygame.Vector2(self.rect.center)
+        
+        self.direction = (player_pos - enemy_pos).normalize()
+        
+        # udpate rect pos + collisions    
+        self.hitbox_rect.x += self.direction.x * self.speed*dt
+        self.collision('horizontal')
+        self.hitbox_rect.y += self.direction.y * self.speed*dt
+        self.collision('vertical')
+        self.rect.center = self.hitbox_rect.center
+    
+    def update(self, dt):
+        self.death_timer.update()
+        if not self.death_timer:
+            self.move(dt)
+            self.animate(dt)
+        
+    
+class NormalEnemy(Enemy):
+    def __init__(self, groups, pos, frames, player, collision_sprites):
+        super().__init__(groups, pos, frames, player, collision_sprites)  
+        
+        self.speed = random.randint(150, 180)
+        
+        
+
+        
+    
+    
+        
+        

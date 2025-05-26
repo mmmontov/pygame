@@ -1,0 +1,11 @@
+{
+    "1": {
+        "enemies": {
+            "normal": 2
+        },
+        "enemies_multiplier": {
+            "speed": 1,
+            "damage": 1
+        }
+    }
+}

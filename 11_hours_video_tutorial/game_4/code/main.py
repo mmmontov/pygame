@@ -43,8 +43,9 @@ class Game:
     
     def create_bee(self):
         Bee((self.all_sprites, self.enemy_sprites), 
-            (self.tilemap.level_width + WINDOW_WIDTH, randint(0, self.tilemap.level_heigt)), 
-            self.bee_frames)
+            (self.tilemap.level_width + WINDOW_WIDTH, 
+             randint(0, self.tilemap.level_heigt)), 
+             self.bee_frames)
         
     def create_worm(self):
         for spawner in self.worm_spawners:

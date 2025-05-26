@@ -21,6 +21,7 @@ class Game:
         self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
         self.buttons_sprites = pygame.sprite.Group()
+        self.enemy_sprites = pygame.sprite.Group()
         
         # game states
         self.states = {
@@ -28,6 +29,7 @@ class Game:
             'settings': states.menu.Settings(self),
             'gameplay': states.gameplay.Gameplay(self),
             'pause': states.gameplay.Pause(self, 'Pause'),
+            'shop': states.gameplay.Shop(self, title='Shop')
         }
         self.current_state = self.states['main_menu']
         self.current_state.on_enter() 
@@ -59,6 +61,7 @@ class Game:
     def load_assets(self):
         # graphics 
         self.player_frames = folder_importer('images', 'player', 'down')
+        self.blob_frames = folder_importer('images', 'enemies', 'blob')
 
     def run(self):
         while self.running:

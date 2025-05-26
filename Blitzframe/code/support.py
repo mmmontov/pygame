@@ -1,5 +1,6 @@
 from settings import *
 import time
+import json
 
 
 class Timer:
@@ -49,7 +50,6 @@ def audio_importer(*path):
             audio_dict[file_name.split('.')[0]] = pygame.mixer.Sound(join(folder_path, file_name))
     return audio_dict
 
-
 def transition_effect(surface: pygame.Surface, callback: callable, fade_speed=20, hold_time=0.3, draw_callback=None):
     clock = pygame.time.Clock()
     fade_overlay = pygame.Surface(surface.get_size()).convert_alpha()
@@ -82,6 +82,7 @@ def transition_effect(surface: pygame.Surface, callback: callable, fade_speed=20
         surface.blit(fade_overlay, (0, 0))
         pygame.display.update()
         clock.tick(60)
+    
         
 class FadeText:
 	"""
@@ -141,3 +142,8 @@ class FadeText:
 				self.state = 'done'
 			self.text_surf.set_alpha(self.alpha)
 			surface.blit(self.text_surf, self.text_rect)
+
+
+def load_json(filepath):
+	with open(filepath, 'r', encoding='utf-8') as f:
+		return json.load(f)

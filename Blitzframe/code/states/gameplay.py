@@ -4,12 +4,18 @@ from tilemap import Tilemap
 from support import *
 from ui import *
 
+from random import choice
+
 class InGameStats:
     def __init__(self, game):
         self.game = game
         self.money = 0
         self.health = self.game.player.health
         self.wave = 1
+        
+        # wave
+        self.enemies_counter = 0
+        self.wave_active = False
         
         # upgrades
         self.health_upgrade = 1
@@ -18,6 +24,7 @@ class InGameStats:
         
     def update(self):
         self.health = self.game.player.health
+        self.enemies_counter = len(self.game.enemy_sprites)
         
 
 
@@ -25,21 +32,25 @@ class Gameplay:
     def __init__(self, game):
         
         self.game = game
-        self.map = Tilemap(self.game.all_sprites, self.game.collision_sprites)
 
     def on_enter(self):
         if not hasattr(self.game, 'player'):
+            self.map = Tilemap(self.game.all_sprites, self.game.collision_sprites)
             self.game.player = Player((self.game.all_sprites), self.map.player_spawner(), self.game.collision_sprites, self.game.player_frames)
             self.game_stats = InGameStats(self.game)
-            # self.wave_text_timer = Timer(1000, False, True, self.starting_wave)
-            self.starting_wave()
-            
+            self.starting_wave_timer = Timer(2000, False, True, self.starting_wave)
+               
                
     def input(self):
         keys = pygame.key.get_just_pressed()
 
         if keys[pygame.K_ESCAPE]:
             self.game.change_state('pause', False)
+        
+        if keys[pygame.K_i]:
+            for sprite in self.game.enemy_sprites:
+                sprite.kill()
+        
             
     def draw_game_ui(self):
         surface = pygame.display.get_surface()
@@ -73,23 +84,77 @@ class Gameplay:
 
 
     def starting_wave(self):
+        self.game_stats.wave_active = True
         # draw wave number
         surface = pygame.display.get_surface()
         font = pygame.font.Font(None, 80)
         x, y = surface.width//2, 70
         self.fade_text = FadeText(f'Wave {self.game_stats.wave}', font, (82, 61, 80), (x, y))
         self.fade_text.start()
-
-
+        
+        # starting wave
+        wave_settings = load_json('settings/waves.json')[str(self.game_stats.wave)]
+        enemies_dict = {
+            'normal': NormalEnemy,
+        }
+        
+        # spawn enemies
+        self.spawn_timers: list[Timer] = []
+        for enemy_name, enemy_num in wave_settings['enemies'].items():
+            for _ in range(enemy_num):
+                self.spawn_timers.append(Timer(random.randint(500, 2000), False, True, 
+                                    lambda: enemies_dict[enemy_name]((self.game.all_sprites, self.game.enemy_sprites), 
+                                                                        choice(self.map.enemy_spawner()),
+                                                                        self.game.blob_frames,
+                                                                        self.game.player,
+                                                                        self.game.collision_sprites)))
+        
+    
+    def ending_wave(self):
+        self.game_stats.wave_active = False
+        # draw wave congradulation
+        surface = pygame.display.get_surface()
+        font = pygame.font.Font(None, 80)
+        x, y = surface.width//2, 70
+        self.fade_text = FadeText(f'Wave {self.game_stats.wave} complete!', font, (82, 61, 80), (x, y))
+        self.fade_text.start()
+        
+        # go to shop
+        self.ending_wave_timer = Timer(2000, False, True, lambda: self.game.change_state('shop'))
+                
+           
+        
+ 
     def draw(self):
         self.game.all_sprites.draw(self.game.player.rect.center)
         self.draw_game_ui()
-        self.fade_text.update(self.game.display_surface)
+        
+        if hasattr(self, 'fade_text'):
+            self.fade_text.update(self.game.display_surface)
 
+        if hasattr(self, 'spawn_timers') and not self.spawn_timers and self.game_stats.enemies_counter == 0 and self.game_stats.wave_active:
+            self.ending_wave()
+
+            
     def update(self, dt):
         self.input()
         self.game_stats.update()
-        # self.wave_text_timer.update()
+        
+        
+        # timers
+        self.starting_wave_timer.update()
+        
+        if hasattr(self, 'ending_wave_timer'):
+            self.ending_wave_timer.update()
+        
+        if hasattr(self, 'spawn_timers'):
+            for timer in self.spawn_timers:
+                timer.update()
+                if not timer: 
+                    self.spawn_timers.remove(timer)
+                    
+        
+        
 
 
 class InGameWindow:
@@ -164,3 +229,45 @@ class Pause(InGameWindow):
     def update(self, dt):
         super().update(dt)
         self.input()
+
+
+class Shop(InGameWindow):
+    def __init__(self, game, title='Shop', size=(800, 520)):  # уменьшили высоту окна
+        super().__init__(game, title, size)
+
+    def on_enter(self):
+        super().on_enter()
+        self.game.game_paused = True
+
+    def create_buttons(self):
+        # 3 столбца и 2 строки, увеличенные кнопки и большие отступы
+        self.buttons = []
+        cols = 3
+        rows = 2
+        horizontal_margin = 80   # большой отступ от левого и правого края окна
+        vertical_margin_top = 120  # большой отступ сверху от заголовка
+        vertical_margin_bottom = 80  # большой отступ снизу
+        button_spacing_x = 60   # большое расстояние между столбцами
+        button_spacing_y = 60   # большое расстояние между строками
+
+        # вычисляем размеры кнопок
+        available_width = self.window_rect.width - 2 * horizontal_margin - (cols - 1) * button_spacing_x
+        button_width = available_width // cols
+        available_height = self.window_rect.height - vertical_margin_top - vertical_margin_bottom - (rows - 1) * button_spacing_y
+        button_height = available_height // rows
+
+        for col in range(cols):
+            for row in range(rows):
+                x = self.window_rect.left + horizontal_margin + col * (button_width + button_spacing_x) + button_width // 2
+                y = self.window_rect.top + vertical_margin_top + row * (button_height + button_spacing_y) + button_height // 2
+                btn = Button(
+                    groups=self.game.buttons_sprites,
+                    pos=(x, y),
+                    text=f'Button {col+1}-{row+1}',
+                    font=self.font,
+                    bg_color='#CA7842',
+                    text_color='#4B352A',
+                    size=(button_width, button_height)
+                )
+                self.buttons.append(btn)
+        
