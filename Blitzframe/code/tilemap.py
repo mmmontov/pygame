@@ -20,7 +20,7 @@ class Tilemap:
         spawners = []
         for obj in self.map.get_layer_by_name('Entities'):
             if obj.name == 'Enemy':
-                spawners.append(obj)
+                spawners.append((obj.x, obj.y))
         return spawners
             
     def setup(self):

@@ -15,23 +15,21 @@ class Game:
         pygame.display.set_caption('Blitzframe')
         self.clock = pygame.time.Clock()
         self.running = True
-        self.game_paused = False
         
-        # sprite groups
+        # sounds
+        self.volume = 0.5
+        
+        self.reset_game()  # инициализация состояния игры
+
+    def reset_game(self):
+        # Сбросить все игровые объекты и состояния
+        self.game_paused = False
         self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
         self.buttons_sprites = pygame.sprite.Group()
-        
-        # game states
-        self.states = {
-            'main_menu': states.menu.Menu(self),
-            'settings': states.menu.Settings(self),
-            'gameplay': states.gameplay.Gameplay(self),
-            'pause': states.gameplay.Pause(self, 'Pause'),
-        }
-        self.current_state = self.states['main_menu']
-        self.current_state.on_enter() 
-        
+        self.enemy_sprites = pygame.sprite.Group()
+        if hasattr(self, 'player'):
+            delattr(self, 'player')
         # tilemap
         self.tilemap = Tilemap(self.all_sprites, self.collision_sprites)
         self.tilemap.setup()
@@ -39,9 +37,19 @@ class Game:
         # load assets
         self.load_assets()
         
-        # sounds
-        self.volume = 0.5
-        
+        # game states
+
+        self.states = {
+            'main_menu': states.menu.Menu(self),
+            'settings': states.menu.Settings(self),
+            'gameplay': states.gameplay.Gameplay(self),
+            'pause': states.gameplay.Pause(self, 'Pause'),
+            'shop': states.gameplay.Shop(self, title='Shop')
+        }
+        self.current_state = self.states['main_menu']
+        self.current_state.on_enter() 
+
+
     def change_state(self, new_state: str, animation=True):
         def state_func():
             self.buttons_sprites.empty()
@@ -59,6 +67,7 @@ class Game:
     def load_assets(self):
         # graphics 
         self.player_frames = folder_importer('images', 'player', 'down')
+        self.blob_frames = folder_importer('images', 'enemies', 'blob')
 
     def run(self):
         while self.running:
@@ -79,7 +88,8 @@ class Game:
             self.current_state.draw()
             
             pygame.display.update()
-            
+            # if hasattr(self, 'game_stats'):
+            #     print(self.game_stats.wave)
         pygame.quit()
         
 
