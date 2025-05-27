@@ -46,7 +46,6 @@ class Player(AnimatedSprite):
         self.direction.x = int(keys[pygame.K_d]) - int(keys[pygame.K_a])
         self.direction.y = int(keys[pygame.K_s]) - int(keys[pygame.K_w])
         self.direction = self.direction.normalize() if self.direction else self.direction
-        
         # ===== test ==============
         if keys[pygame.K_k]:
             self.health -= 3
@@ -91,11 +90,12 @@ class Player(AnimatedSprite):
         
         
 class Enemy(AnimatedSprite):
-    def __init__(self, groups, pos, frames, player, collision_sprites):
+    def __init__(self, groups, pos, frames, player, collision_sprites, speed_multiplier=1, damage_multiplier=1):
         super().__init__(groups, pos, frames)
         self.death_timer = Timer(200, func=self.kill)
         self.player = player
-        self.speed = 100
+        self.speed = 100 * speed_multiplier
+        self.damage = 15 * damage_multiplier
     
         # rect
         self.hitbox_rect = self.rect.inflate(-20, -40)
@@ -141,11 +141,11 @@ class Enemy(AnimatedSprite):
         
     
 class NormalEnemy(Enemy):
-    def __init__(self, groups, pos, frames, player, collision_sprites):
-        super().__init__(groups, pos, frames, player, collision_sprites)  
+    def __init__(self, groups, pos, frames, player, collision_sprites, speed_multiplier=1, damage_multiplier=1):
+        super().__init__(groups, pos, frames, player, collision_sprites, speed_multiplier, damage_multiplier)  
         
-        self.speed = random.randint(150, 180)
-        
+        self.speed = random.randint(150, 180) * speed_multiplier
+        print(speed_multiplier)
         
 
         

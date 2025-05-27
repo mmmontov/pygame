@@ -7,5 +7,14 @@
             "speed": 1,
             "damage": 1
         }
+    },
+    "2": {
+        "enemies": {
+            "normal": 4
+        },
+        "enemies_multiplier": {
+            "speed": 1.1,
+            "damage": 1.1
+        }
     }
 }

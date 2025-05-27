@@ -14,7 +14,7 @@ class InGameStats:
         self.wave = 1
         
         # wave
-        self.enemies_counter = 0
+        self.prev_enemies_count = self.enemies_counter = 0
         self.wave_active = False
         
         # upgrades
@@ -24,22 +24,27 @@ class InGameStats:
         
     def update(self):
         self.health = self.game.player.health
+        self.prev_enemies_count = self.enemies_counter
         self.enemies_counter = len(self.game.enemy_sprites)
-        
+        if self.prev_enemies_count > self.enemies_counter:
+            self.money += random.randint(50, 100)
 
 
 class Gameplay:
     def __init__(self, game):
-        
         self.game = game
 
     def on_enter(self):
         if not hasattr(self.game, 'player'):
-            self.map = Tilemap(self.game.all_sprites, self.game.collision_sprites)
-            self.game.player = Player((self.game.all_sprites), self.map.player_spawner(), self.game.collision_sprites, self.game.player_frames)
+            self.game.gameplay = self
+            self.game.player = Player((self.game.all_sprites), self.game.tilemap.player_spawner(), self.game.collision_sprites, self.game.player_frames)
             self.game_stats = InGameStats(self.game)
-            self.starting_wave_timer = Timer(2000, False, True, self.starting_wave)
+            self.game.game_stats = self.game_stats
+            self.start_wave_timer()
                
+    def start_wave_timer(self):
+        self.starting_wave_timer = Timer(2000, False, True, self.starting_wave)
+        
                
     def input(self):
         keys = pygame.key.get_just_pressed()
@@ -50,6 +55,7 @@ class Gameplay:
         if keys[pygame.K_i]:
             for sprite in self.game.enemy_sprites:
                 sprite.kill()
+                break
         
             
     def draw_game_ui(self):
@@ -97,6 +103,7 @@ class Gameplay:
         enemies_dict = {
             'normal': NormalEnemy,
         }
+        wave_multipliers = wave_settings['enemies_multiplier']
         
         # spawn enemies
         self.spawn_timers: list[Timer] = []
@@ -104,10 +111,13 @@ class Gameplay:
             for _ in range(enemy_num):
                 self.spawn_timers.append(Timer(random.randint(500, 2000), False, True, 
                                     lambda: enemies_dict[enemy_name]((self.game.all_sprites, self.game.enemy_sprites), 
-                                                                        choice(self.map.enemy_spawner()),
+                                                                        choice(self.game.tilemap.enemy_spawner()),
                                                                         self.game.blob_frames,
                                                                         self.game.player,
-                                                                        self.game.collision_sprites)))
+                                                                        self.game.collision_sprites,
+                                                                        speed_multiplier=wave_multipliers['speed'],
+                                                                        damage_multiplier=wave_multipliers['damage']
+                                                                        )))
         
     
     def ending_wave(self):
@@ -120,11 +130,10 @@ class Gameplay:
         self.fade_text.start()
         
         # go to shop
+        self.game_stats.wave += 1
         self.ending_wave_timer = Timer(2000, False, True, lambda: self.game.change_state('shop'))
                 
            
-        
- 
     def draw(self):
         self.game.all_sprites.draw(self.game.player.rect.center)
         self.draw_game_ui()
@@ -218,6 +227,14 @@ class Pause(InGameWindow):
             bg_color='#CA7842',
             text_color='#4B352A'
         )
+        self.menu_button = Button(
+            groups=self.game.buttons_sprites,
+            pos=(self.window_rect.x + self.window_rect.width//2, self.window_rect.y + self.window_rect.height//3 + 100),
+            text='Menu',
+            font=self.font,
+            bg_color='#CA7842',
+            text_color='#4B352A'
+        )
 
     def input(self):
         keys = pygame.key.get_just_pressed()
@@ -225,6 +242,9 @@ class Pause(InGameWindow):
             self.game.change_state('gameplay', False)
             self.game.game_paused = False
 
+        if self.menu_button.is_clicked():
+            self.game.change_state('main_menu')
+            self.game.reset_game()
 
     def update(self, dt):
         super().update(dt)
@@ -260,14 +280,27 @@ class Shop(InGameWindow):
             for row in range(rows):
                 x = self.window_rect.left + horizontal_margin + col * (button_width + button_spacing_x) + button_width // 2
                 y = self.window_rect.top + vertical_margin_top + row * (button_height + button_spacing_y) + button_height // 2
-                btn = Button(
-                    groups=self.game.buttons_sprites,
-                    pos=(x, y),
-                    text=f'Button {col+1}-{row+1}',
-                    font=self.font,
-                    bg_color='#CA7842',
-                    text_color='#4B352A',
-                    size=(button_width, button_height)
-                )
-                self.buttons.append(btn)
-        
+                if col == 1 and row == 0:
+                    btn = Button(
+                        groups=self.game.buttons_sprites,
+                        pos=(x, y),
+                        text=f'Start wave',
+                        font=self.font,
+                        bg_color='#CA7842',
+                        text_color='#4B352A',
+                        size=(button_width, button_height),
+                        callback='next_wave'
+                    )
+
+                    self.buttons.append(btn)
+    
+    def input(self):
+        for btn in self.buttons:
+            if btn.is_clicked() and btn.callback == 'next_wave':
+                self.game.change_state('gameplay')
+                self.game.game_paused = False
+                self.game.gameplay.start_wave_timer()
+                
+    def update(self, dt):
+        super().update(dt)
+        self.input()

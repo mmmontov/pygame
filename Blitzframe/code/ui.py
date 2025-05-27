@@ -4,7 +4,7 @@ from settings import *
         
 class Button(pygame.sprite.Sprite):
     def __init__(self, groups, pos: tuple[int], text: str, font: pygame.Font, size=(200, 50), 
-                 bg_color='white', text_color='black'):
+                 bg_color='white', text_color='black', callback=''):
         super().__init__(groups)
         self.pos = pos
         self.width = size[0]
@@ -14,6 +14,7 @@ class Button(pygame.sprite.Sprite):
         self.bg_color = bg_color
         self.text_color = text_color
         self.visible = True
+        self.callback = callback
         
         self.image = pygame.Surface(size)
         self.rect = self.image.get_frect(center = pos)

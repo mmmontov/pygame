@@ -15,15 +15,30 @@ class Game:
         pygame.display.set_caption('Blitzframe')
         self.clock = pygame.time.Clock()
         self.running = True
-        self.game_paused = False
         
-        # sprite groups
+        # sounds
+        self.volume = 0.5
+        
+        self.reset_game()  # инициализация состояния игры
+
+    def reset_game(self):
+        # Сбросить все игровые объекты и состояния
+        self.game_paused = False
         self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
         self.buttons_sprites = pygame.sprite.Group()
         self.enemy_sprites = pygame.sprite.Group()
+        if hasattr(self, 'player'):
+            delattr(self, 'player')
+        # tilemap
+        self.tilemap = Tilemap(self.all_sprites, self.collision_sprites)
+        self.tilemap.setup()
+        
+        # load assets
+        self.load_assets()
         
         # game states
+
         self.states = {
             'main_menu': states.menu.Menu(self),
             'settings': states.menu.Settings(self),
@@ -33,17 +48,8 @@ class Game:
         }
         self.current_state = self.states['main_menu']
         self.current_state.on_enter() 
-        
-        # tilemap
-        self.tilemap = Tilemap(self.all_sprites, self.collision_sprites)
-        self.tilemap.setup()
-        
-        # load assets
-        self.load_assets()
-        
-        # sounds
-        self.volume = 0.5
-        
+
+
     def change_state(self, new_state: str, animation=True):
         def state_func():
             self.buttons_sprites.empty()
@@ -82,7 +88,8 @@ class Game:
             self.current_state.draw()
             
             pygame.display.update()
-            
+            # if hasattr(self, 'game_stats'):
+            #     print(self.game_stats.wave)
         pygame.quit()
         
 
