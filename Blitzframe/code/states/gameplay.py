@@ -102,22 +102,29 @@ class Gameplay:
         wave_settings = load_json('settings/waves.json')[str(self.game_stats.wave)]
         enemies_dict = {
             'normal': NormalEnemy,
+            'fast': FastEnemy
         }
         wave_multipliers = wave_settings['enemies_multiplier']
         
         # spawn enemies
         self.spawn_timers: list[Timer] = []
+        # print(wave_settings['enemies'].items())
         for enemy_name, enemy_num in wave_settings['enemies'].items():
             for _ in range(enemy_num):
-                self.spawn_timers.append(Timer(random.randint(500, 2000), False, True, 
-                                    lambda: enemies_dict[enemy_name]((self.game.all_sprites, self.game.enemy_sprites), 
-                                                                        choice(self.game.tilemap.enemy_spawner()),
-                                                                        self.game.blob_frames,
-                                                                        self.game.player,
-                                                                        self.game.collision_sprites,
-                                                                        speed_multiplier=wave_multipliers['speed'],
-                                                                        damage_multiplier=wave_multipliers['damage']
-                                                                        )))
+                
+                self.spawn_timers.append(Timer(
+                    random.randint(1000, 2000), 
+                    False, 
+                    True, 
+                    lambda enemy_name = enemy_name: enemies_dict[enemy_name]((
+                        self.game.all_sprites, self.game.enemy_sprites), 
+                        choice(self.game.tilemap.enemy_spawner()),
+                        self.game.enemies_frames_dict[enemy_name],
+                        self.game.player,
+                        self.game.collision_sprites,
+                        speed_multiplier=wave_multipliers['speed'],
+                        damage_multiplier=wave_multipliers['damage']
+                        )))
         
     
     def ending_wave(self):
@@ -148,7 +155,6 @@ class Gameplay:
     def update(self, dt):
         self.input()
         self.game_stats.update()
-        
         
         # timers
         self.starting_wave_timer.update()

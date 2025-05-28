@@ -67,8 +67,14 @@ class Game:
     def load_assets(self):
         # graphics 
         self.player_frames = folder_importer('images', 'player', 'down')
-        self.blob_frames = folder_importer('images', 'enemies', 'blob')
-
+        self.normal_enemy_frames = folder_importer('images', 'enemies', 'normal')
+        self.fast_enemy_frames = folder_importer('images', 'enemies', 'fast')
+        
+        self.enemies_frames_dict = {
+            'normal': self.normal_enemy_frames,
+            'fast': self.fast_enemy_frames
+        }
+        
     def run(self):
         while self.running:
             dt = self.clock.tick(FRAMERATE) / 1000
