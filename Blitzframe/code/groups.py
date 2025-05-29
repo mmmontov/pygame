@@ -17,6 +17,7 @@ class AllSprites(pygame.sprite.Group):
         self.offset += (target_offset - self.offset) * self.camera_speed
 
         # Отрисовка
+        gun_sprite = [sprite for sprite in self if hasattr(sprite, 'gun')]
         ground_sprites = [sprite for sprite in self if hasattr(sprite, 'ground')]
         objects_sprites = sorted([sprite for sprite in self if not hasattr(sprite, 'ground')], key=lambda x: x.rect.centery)
 

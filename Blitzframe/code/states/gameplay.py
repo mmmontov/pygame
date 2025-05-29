@@ -38,6 +38,7 @@ class Gameplay:
         if not hasattr(self.game, 'player'):
             self.game.gameplay = self
             self.game.player = Player((self.game.all_sprites), self.game.tilemap.player_spawner(), self.game.collision_sprites, self.game.player_frames)
+            self.game.current_gun = Pistol(self.game.all_sprites, self.game.player)
             self.game_stats = InGameStats(self.game)
             self.game.game_stats = self.game_stats
             self.start_wave_timer()
@@ -108,7 +109,6 @@ class Gameplay:
         
         # spawn enemies
         self.spawn_timers: list[Timer] = []
-        # print(wave_settings['enemies'].items())
         for enemy_name, enemy_num in wave_settings['enemies'].items():
             for _ in range(enemy_num):
                 
