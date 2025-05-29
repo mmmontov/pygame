@@ -10,7 +10,7 @@
     },
     "2": {
         "enemies": {
-            "normal": 4
+            "normal": 4  
         },
         "enemies_multiplier": {
             "speed": 1.1,
