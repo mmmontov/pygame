@@ -10,12 +10,7 @@
     },
     "2": {
         "enemies": {
-<<<<<<< HEAD
             "normal": 4  
-=======
-            "normal": 2,
-            "fast": 2
->>>>>>> 8d5d9ffd83da64ad8f8e6a975dec14f7250322f8
         },
         "enemies_multiplier": {
             "speed": 1.1,
