@@ -66,9 +66,40 @@ class Game:
 
     def load_assets(self):
         # graphics 
-        self.player_frames = folder_importer('images', 'player', 'down')
-        self.blob_frames = folder_importer('images', 'enemies', 'blob')
-
+        # self.player_frames = folder_importer('images', 'player', 'down')
+        # ===== player frames =====
+        directions = [
+            'down', 'left_down', 'left', 'left_up',
+            'up', 'right_up', 'right', 'right_down'
+        ]
+        self.player_frames = {}
+        for direction in directions:
+            frames = folder_importer('images', 'player', direction)
+            # Сортировка по числу в названии файла
+            if isinstance(frames, dict):
+                # frames is a dict: {filename: Surface}
+                frames = [surf for _, surf in sorted(
+                    frames.items(),
+                    key=lambda item: int(item[0].split('_')[-1].split('.')[0])
+                )]
+            # Увеличить каждый фрейм в 10 раз
+            scaled_frames = [
+                pygame.transform.scale(
+                    surf,
+                    (surf.get_width() * 3, surf.get_height() * 3)
+                ) for surf in frames
+            ]
+            self.player_frames[direction] = scaled_frames
+        # ==========================
+        
+        self.normal_enemy_frames = folder_importer('images', 'enemies', 'normal')
+        self.fast_enemy_frames = folder_importer('images', 'enemies', 'fast')
+        
+        self.enemies_frames_dict = {
+            'normal': self.normal_enemy_frames,
+            'fast': self.fast_enemy_frames
+        }
+        
     def run(self):
         while self.running:
             dt = self.clock.tick(FRAMERATE) / 1000
