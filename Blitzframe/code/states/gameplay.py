@@ -38,7 +38,7 @@ class Gameplay:
         if not hasattr(self.game, 'player'):
             self.game.gameplay = self
             self.game.player = Player((self.game.all_sprites), self.game.tilemap.player_spawner(), self.game.collision_sprites, self.game.player_frames)
-            self.game.current_gun = Pistol(self.game.all_sprites, self.game.player)
+            self.game.current_gun = Shotgun((self.game.all_sprites, self.game.bullet_sprites), self.game.player)
             self.game_stats = InGameStats(self.game)
             self.game.game_stats = self.game_stats
             self.start_wave_timer()
@@ -140,6 +140,19 @@ class Gameplay:
         self.game_stats.wave += 1
         self.ending_wave_timer = Timer(2000, False, True, lambda: self.game.change_state('shop'))
                 
+    def collision(self):
+        for bullet in self.game.bullet_sprites:
+            sprite_collision = pygame.sprite.spritecollide(bullet, self.game.enemy_sprites, False, pygame.sprite.collide_mask)
+            if sprite_collision:
+                bullet.kill()
+                for sprite in sprite_collision:
+                    sprite.take_damage(bullet.damage)
+        
+        for enemy in self.game.enemy_sprites:
+            if enemy.rect.colliderect(self.game.player.rect):
+                self.game.player.take_damage(enemy)
+                enemy.deal_damage()
+        
            
     def draw(self):
         self.game.all_sprites.draw(self.game.player.rect.center)
@@ -155,6 +168,7 @@ class Gameplay:
     def update(self, dt):
         self.input()
         self.game_stats.update()
+        self.collision()
         
         # timers
         self.starting_wave_timer.update()

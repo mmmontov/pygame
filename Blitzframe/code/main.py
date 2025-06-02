@@ -28,6 +28,7 @@ class Game:
         self.collision_sprites = pygame.sprite.Group()
         self.buttons_sprites = pygame.sprite.Group()
         self.enemy_sprites = pygame.sprite.Group()
+        self.bullet_sprites = pygame.sprite.Group()
         if hasattr(self, 'player'):
             delattr(self, 'player')
         # tilemap
@@ -38,7 +39,6 @@ class Game:
         self.load_assets()
         
         # game states
-
         self.states = {
             'main_menu': states.menu.Menu(self),
             'settings': states.menu.Settings(self),
@@ -66,7 +66,6 @@ class Game:
 
     def load_assets(self):
         # graphics 
-        # self.player_frames = folder_importer('images', 'player', 'down')
         # ===== player frames =====
         directions = [
             'down', 'left_down', 'left', 'left_up',
