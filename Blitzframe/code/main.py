@@ -6,6 +6,7 @@ from tilemap import Tilemap
 from ui import *
 from groups import AllSprites
 from support import *
+from sprites import *
 
 class Game:
     def __init__(self):
@@ -31,6 +32,10 @@ class Game:
         self.bullet_sprites = pygame.sprite.Group()
         if hasattr(self, 'player'):
             delattr(self, 'player')
+            
+        self.available_weapons = {
+            'pistol': Pistol
+        }
         # tilemap
         self.tilemap = Tilemap(self.all_sprites, self.collision_sprites)
         self.tilemap.setup()
@@ -49,6 +54,10 @@ class Game:
         self.current_state = self.states['main_menu']
         self.current_state.on_enter() 
 
+    def change_gun(self, gun):
+        if gun in self.available_weapons:
+            self.current_gun.kill()
+            self.current_gun = self.available_weapons[gun]((self.all_sprites, self.bullet_sprites), self.player)
 
     def change_state(self, new_state: str, animation=True):
         def state_func():

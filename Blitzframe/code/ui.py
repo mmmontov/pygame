@@ -28,6 +28,16 @@ class Button(pygame.sprite.Sprite):
 
         return self.rect.collidepoint(mouse_pos) and mouse_buttons[0]
      
+    def hover(self):
+        mouse_pos = pygame.mouse.get_pos()
+        if self.rect.collidepoint(mouse_pos):
+            overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+            pygame.draw.ellipse(overlay, (100, 100, 100, 30), overlay.get_rect())
+            self.render_text()  
+            self.image.blit(overlay, (0, 0))
+        else:
+            self.render_text()
+        
         
     def render_text(self):
         if self.visible:
@@ -36,6 +46,9 @@ class Button(pygame.sprite.Sprite):
             text_rect = text_surf.get_frect(center=(self.width/2, self.height/2))
             self.image.blit(text_surf, text_rect)
 
+    def update(self, dt):
+        super().update()
+        self.hover()
 
 class Slider(pygame.sprite.Sprite):
     def __init__(self, groups, pos: tuple[int], size=(200, 10), 
@@ -71,7 +84,7 @@ class Slider(pygame.sprite.Sprite):
 
         # поверхность и прямоугольник
         total_width = self.width + label_width
-        self.image = pygame.Surface((total_width, self.height + 10), pygame.SRCALPHA)
+        self.image = pygame.Surface((total_width + 50, self.height + 10), pygame.SRCALPHA)
         self.rect = self.image.get_frect(center=pos)
 
         # внутреннее состояние

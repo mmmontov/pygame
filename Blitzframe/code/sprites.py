@@ -23,6 +23,7 @@ class AnimatedSprite(Sprite):
 class Player(Sprite):
     def __init__(self, groups, pos, collision_sprites, frames):
         # frames: dict[str, list[surf]]
+        self.all_sprites = groups
         self.frames = frames
         self.state = 'down'
         self.frame_index = 1
@@ -33,7 +34,7 @@ class Player(Sprite):
 
         # movement
         self.direction = pygame.Vector2()
-        self.speed = 200
+        self.speed = 150
 
         # health
         self.health = self.max_health = 100
@@ -117,6 +118,17 @@ class Player(Sprite):
     def take_damage(self, enemy):
         self.health -= enemy.damage
         
+        # camera chake
+        if self.health <= 20:
+            self.all_sprites.shake(20)
+        elif 20 < self.health <= 50:
+            self.all_sprites.shake(15)
+        elif 50 < self.health <= 80:
+            self.all_sprites.shake(10)
+        else:
+            self.all_sprites.shake(5)
+        
+        # punch
         direction = pygame.Vector2(self.rect.center) - pygame.Vector2(enemy.rect.center)
         if direction.length_squared() > 0:
             self.knockback_direction = direction.normalize()
@@ -126,6 +138,7 @@ class Player(Sprite):
         else:
             self.knockback_direction = pygame.Vector2()
             self.knockback_timer = None
+
 
     def apply_knockback(self, dt):
         if hasattr(self, 'knockback_timer') and self.knockback_timer and self.knockback_timer.active:
@@ -343,6 +356,7 @@ class Gun(pygame.sprite.Sprite):
 
 
 class Pistol(Gun):
+    gun_name = 'pistol'
     def __init__(self, groups, player):
         self.all_sprites, self.bullet_sprites = groups
         super().__init__(self.all_sprites, player)
@@ -364,12 +378,13 @@ class Pistol(Gun):
 
 
 class Shotgun(Gun):
+    gun_name = 'shotgun'
     def __init__(self, groups, player):
         self.all_sprites, self.bullet_sprites = groups
         super().__init__(self.all_sprites, player)
         self.bullet_surf = pygame.image.load(join('images', 'guns', 'bullet.png')).convert_alpha()
         self.bullets_count = 5
-        self.damage = 25
+        self.damage *= 0.5
         
         self.cooldown_timer = Timer(1000)
 
