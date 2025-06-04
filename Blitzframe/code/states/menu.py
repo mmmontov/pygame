@@ -3,12 +3,13 @@ from ui import *
 from support import *
 
 class MainMenu:
+    music_state = 'main_menu'
     def __init__(self, game):
         self.game = game
         self.display_surface = pygame.display.get_surface()
         self.font = pygame.font.Font(None, 50)
 
-        
+
 
     def on_enter(self):
         self.create_buttons()
@@ -95,14 +96,27 @@ class Settings(MainMenu):
             label_text='Volume:',
             label_font=self.font
         )
+        
+        # back to menu
+        self.back_to_menu_button = Button(
+            groups=(self.game.buttons_sprites),
+            pos=(100, 70),
+            text='<--',
+            font=self.font,
+            size=(75, 40),
+            bg_color='#CA7842',
+            text_color='#4B352A'
+        )
 
 
     def input(self):
         keys = pygame.key.get_just_pressed()
 
-        if keys[pygame.K_ESCAPE]:
+        if keys[pygame.K_ESCAPE] or self.back_to_menu_button.is_clicked():
             self.game.change_state('main_menu')
             self.text = 'mian_menu'
+            
+        
         
         self.game.volume = self.volume_slider.get_value()
 

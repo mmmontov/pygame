@@ -24,6 +24,7 @@ class InGameStats:
         
     def update(self):
         self.health = self.game.player.health
+        
         self.prev_enemies_count = self.enemies_counter
         self.enemies_counter = len(self.game.enemy_sprites)
         if self.prev_enemies_count > self.enemies_counter:
@@ -31,13 +32,15 @@ class InGameStats:
 
 
 class Gameplay:
+    state_name = 'gameplay'
+    music_state = 'gameplay'
     def __init__(self, game):
         self.game = game
 
     def on_enter(self):
         if not hasattr(self.game, 'player'):
             self.game.gameplay = self
-            self.game.player = Player((self.game.all_sprites), self.game.tilemap.player_spawner(), self.game.collision_sprites, self.game.player_frames)
+            self.game.player = Player((self.game.all_sprites), self.game.tilemap.player_spawner(), self.game.collision_sprites, self.game.player_frames, game=self.game)
             self.game.current_gun = Pistol((self.game.all_sprites, self.game.bullet_sprites), self.game.player)
             self.game_stats = InGameStats(self.game)
             self.game.game_stats = self.game_stats
@@ -45,8 +48,8 @@ class Gameplay:
                
     def start_wave_timer(self):
         self.starting_wave_timer = Timer(2000, False, True, self.starting_wave)
-        
-               
+
+
     def input(self):
         keys = pygame.key.get_just_pressed()
 
@@ -59,6 +62,8 @@ class Gameplay:
                 
         if keys[pygame.K_q]:
             self.game.available_weapons[Shotgun.gun_name] = Shotgun
+            self.game.available_weapons[SniperRifle.gun_name] = SniperRifle
+            self.game.available_weapons[MachineGun.gun_name] = MachineGun
             print('shot added')
             print(self.game.available_weapons)
         if keys[pygame.K_1]:
@@ -67,6 +72,12 @@ class Gameplay:
         if keys[pygame.K_2]:
             self.game.change_gun(Shotgun.gun_name)
             print(Shotgun.gun_name)
+        if keys[pygame.K_3]:
+            self.game.change_gun(SniperRifle.gun_name)
+            print(SniperRifle.gun_name)
+        if keys[pygame.K_4]:
+            self.game.change_gun(MachineGun.gun_name)
+            print(MachineGun.gun_name)
 
             
     def draw_game_ui(self):
@@ -76,7 +87,7 @@ class Gameplay:
         font = pygame.font.Font(None, 28)
         bar_width, bar_height = 200, 30
         x, y = 20, 20
-        health = self.game_stats.health
+        health = self.game.player.health
         max_health = self.game.player.max_health if hasattr(self.game.player, 'max_health') else 100
 
         # задний фон
@@ -132,6 +143,7 @@ class Gameplay:
                         self.game.enemies_frames_dict[enemy_name],
                         self.game.player,
                         self.game.collision_sprites,
+                        health_multiplier=wave_multipliers['health'],
                         speed_multiplier=wave_multipliers['speed'],
                         damage_multiplier=wave_multipliers['damage']
                         )))
@@ -240,6 +252,8 @@ class InGameWindow:
 
 
 class Pause(InGameWindow):
+    state_name = 'pause'
+    music_state = 'gameplay'
     def __init__(self, game, title='', size=(400, 300)):
         super().__init__(game, title, size)
 
@@ -282,6 +296,8 @@ class Pause(InGameWindow):
 
        
 class Shop(InGameWindow):
+    state_name = 'shop'
+    music_state = 'shop'
     def __init__(self, game, title='Shop', size=(800, 520)):
         super().__init__(game, title, size)
 
@@ -293,8 +309,8 @@ class Shop(InGameWindow):
         cols = 3
         rows = 4
         horizontal_margin = 40
-        vertical_margin_top = 100
-        vertical_margin_bottom = 80
+        vertical_margin_top = 70
+        vertical_margin_bottom = 70
         button_spacing_x = 20
         button_spacing_y = 20
 
@@ -303,6 +319,7 @@ class Shop(InGameWindow):
         button_width = available_width // cols
         available_height = self.window_rect.height - vertical_margin_top - vertical_margin_bottom - (rows - 1) * button_spacing_y
         button_height = available_height // rows
+
 
         # матрица кнопок
         self.buttons = [[None for _ in range(cols)] for _ in range(rows)]
@@ -324,6 +341,19 @@ class Shop(InGameWindow):
                         text_color='#4B352A',
                         size=(button_width, button_height),
                         callback='next_wave'
+                    )
+                
+                # heal player
+                if row == 0 and col == 2:
+                    btn = Button(
+                        groups=self.game.buttons_sprites,
+                        pos=(x, y),
+                        text='Heal',
+                        font=self.font,
+                        bg_color='#5A827E',
+                        text_color='#FAFFCA',
+                        size=(button_width, button_height),
+                        callback='heal_player'
                     )
                 
                 # ====== upgrades ======
@@ -365,36 +395,19 @@ class Shop(InGameWindow):
                     )
                 
                 # ====== guns ======
-                # pistol
-                if row == 0 and col == 0:
-                    gun_name = Pistol.gun_name
-                    if Pistol.gun_name in self.game.available_weapons:
-                        btn = Button(
-                            groups=self.game.buttons_sprites,
-                            pos=(x, y),
-                            text=gun_name,
-                            font=self.font,
-                            bg_color='#CA7842',
-                            text_color='#4B352A',
-                            size=(button_width, button_height),
-                            callback=f'select_{gun_name}' 
-                        )
-                    else:
-                        btn = Button(
-                            groups=self.game.buttons_sprites,
-                            pos=(x, y),
-                            text=f'buy: {gun_name}',
-                            font=self.font,
-                            bg_color='#CA7842',
-                            text_color='#4B352A',
-                            size=(button_width, button_height),
-                            callback=f'buy_{gun_name}' 
-                        )
-                
-                # shotgun
-                if row == 1 and col == 0:
-                    gun_name = Shotgun.gun_name
-                    if Shotgun.gun_name in self.game.available_weapons:
+                gun_name = None
+                if col == 0:
+                    if row == 0:
+                        gun_name = Pistol.gun_name
+                    elif row == 1:
+                        gun_name = Shotgun.gun_name
+                    elif row == 2:
+                        gun_name = SniperRifle.gun_name
+                    elif row == 3:
+                       gun_name = MachineGun.gun_name
+                   
+                if gun_name: 
+                    if gun_name in self.game.available_weapons:
                         btn = Button(
                             groups=self.game.buttons_sprites,
                             pos=(x, y),
@@ -425,15 +438,26 @@ class Shop(InGameWindow):
             for btn in row:
                 btn: Button
                 if btn and btn.is_clicked():
-                    # ====== upgrades ======
+                    # Start wave
                     if btn.callback == 'next_wave':
                         self.game.change_state('gameplay')
                         self.game.game_paused = False
                         self.game.gameplay.start_wave_timer()
                         
+                    # heal player
+                    if btn.callback == 'heal_player':
+                        if self.game.player.health != self.game.player.max_health:
+                            self.game.player.health = self.game.player.max_health
+                        
+                        
+                    # ====== upgrades ======
                     if btn.callback == 'health_upgrade':
+                        max_health = self.game.player.max_health == self.game.player.health
+                        print(max_health)
                         self.game.game_stats.health_upgrade += 20
                         self.game.player.max_health = self.game.game_stats.health_upgrade
+                        if max_health:
+                            self.game.player.health = self.game.game_stats.health_upgrade
                     
                     if btn.callback == 'damage_upgrade':
                         self.game.game_stats.damage_upgrade += 5
@@ -444,22 +468,22 @@ class Shop(InGameWindow):
                         self.game.player.speed = self.game.game_stats.speed_upgrade
 
                     # ====== guns ======
-                    pistol = Pistol.gun_name
-                    if btn.callback == f'select_{pistol}':
-                        self.game.change_gun(pistol)
-                    if btn.callback == f'buy_{pistol}':
-                        btn.text = pistol
-                        btn.callback = f'select_{pistol}'
-                        self.game.available_weapons[pistol] = Pistol
-
-                    shotgun = Shotgun.gun_name
-                    if btn.callback == f'select_{shotgun}':
-                        self.game.change_gun(shotgun)
-                    if btn.callback == f'buy_{shotgun}':
-                        btn.text = shotgun
-                        btn.callback = f'select_{shotgun}'
-                        self.game.available_weapons[shotgun] = Shotgun
-
+                    all_guns = {
+                        Pistol.gun_name: Pistol,
+                        Shotgun.gun_name: Shotgun,
+                        SniperRifle.gun_name: SniperRifle,
+                        MachineGun.gun_name: MachineGun
+                    }
+                    
+                    if btn.callback.startswith('select_'):
+                        gun_name = btn.callback.split('_')[1]
+                        self.game.change_gun(gun_name)
+                    if btn.callback.startswith('buy_'):
+                        gun_name = btn.callback.split('_')[1]
+                        btn.text = gun_name
+                        btn.callback = f'select_{gun_name}'
+                        self.game.available_weapons[gun_name] = all_guns[gun_name]
+                    
 
     def draw_stats(self):
         font = pygame.font.Font(None, 36)
@@ -498,9 +522,14 @@ class Shop(InGameWindow):
         current_gun_rect = current_gun.get_rect(center=(base_x, base_y + 4 * line_spacing))
         self.display_surface.blit(current_gun, current_gun_rect)
 
+
+
     def draw(self):
         super().draw()
         self.draw_stats()
+        
+        # health & money
+        self.game.states['gameplay'].draw_game_ui()
         
 
     def update(self, dt):

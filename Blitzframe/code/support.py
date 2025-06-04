@@ -43,12 +43,12 @@ def folder_importer(*path):
             surfs[file_name.split('.')[0]] = pygame.image.load(full_path).convert_alpha()
     return surfs
 
-def audio_importer(*path):
-    audio_dict = {}
-    for folder_path, _, file_names in walk(join(*path)):
-        for file_name in file_names:
-            audio_dict[file_name.split('.')[0]] = pygame.mixer.Sound(join(folder_path, file_name))
-    return audio_dict
+def audio_importer(*path): 
+	audio_dict = {}
+	for folder_path, _, file_names in walk(join(*path)):
+		for file_name in file_names:
+			audio_dict[file_name.split('.')[0]] = pygame.mixer.Sound(join(folder_path, file_name))
+	return audio_dict
 
 def transition_effect(surface: pygame.Surface, callback: callable, fade_speed=20, hold_time=0.3, draw_callback=None):
     clock = pygame.time.Clock()

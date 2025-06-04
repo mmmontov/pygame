@@ -7,6 +7,7 @@ from ui import *
 from groups import AllSprites
 from support import *
 from sprites import *
+from sound import Sound
 
 class Game:
     def __init__(self):
@@ -17,10 +18,12 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
         
+        self.reset_game()  # инициализация состояния игры
+        
         # sounds
         self.volume = 0.5
+        self.sound = Sound(self)
         
-        self.reset_game()  # инициализация состояния игры
 
     def reset_game(self):
         # Сбросить все игровые объекты и состояния
@@ -121,14 +124,13 @@ class Game:
             if not self.game_paused:
                 self.all_sprites.update(dt)
             self.current_state.update(dt)
+            self.sound.update(dt)
             
             # draw
             self.display_surface.fill('black')
             self.current_state.draw()
             
             pygame.display.update()
-            # if hasattr(self, 'game_stats'):
-            #     print(self.game_stats.wave)
         pygame.quit()
         
 

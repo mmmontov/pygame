@@ -21,22 +21,33 @@ class Button(pygame.sprite.Sprite):
         
         self.render_text()
         
+        # sounds
+        self.hover_sound = pygame.mixer.Sound(join('sounds', 'sounds', 'hover.mp3'))
+        self.click_sound = pygame.mixer.Sound(join('sounds', 'sounds', 'click.mp3'))
+        
 
     def is_clicked(self):
         mouse_pos = pygame.mouse.get_pos()
         mouse_buttons = pygame.mouse.get_just_pressed()
-
-        return self.rect.collidepoint(mouse_pos) and mouse_buttons[0]
-     
+        click = self.rect.collidepoint(mouse_pos) and mouse_buttons[0]
+        if click:
+            self.click_sound.play()
+            return click
+             
+             
     def hover(self):
         mouse_pos = pygame.mouse.get_pos()
         if self.rect.collidepoint(mouse_pos):
+            if not hasattr(self, 'was_hovered') or not self.was_hovered:
+                self.hover_sound.play()
+            self.was_hovered = True
             overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
             pygame.draw.ellipse(overlay, (100, 100, 100, 30), overlay.get_rect())
             self.render_text()  
             self.image.blit(overlay, (0, 0))
         else:
             self.render_text()
+            self.was_hovered = False
         
         
     def render_text(self):
