@@ -61,6 +61,10 @@ class Game:
         if gun in self.available_weapons:
             self.current_gun.kill()
             self.current_gun = self.available_weapons[gun]((self.all_sprites, self.bullet_sprites), self.player)
+            self.play_sound('gun_swap')
+
+    def play_sound(self, name):
+        self.sound.sounds[name].play()
 
     def change_state(self, new_state: str, animation=True):
         def state_func():

@@ -19,16 +19,47 @@ class InGameStats:
         
         # upgrades
         self.health_upgrade = 100
-        self.damage_upgrade = 50
-        self.speed_upgrade = 150
+        self.health_level = (self.health_upgrade - 100) // 20 + 1
+        self.health_upgrade_price = 30
+        self.health_price_step = 10
         
+        self.damage_upgrade = 50
+        self.damage_level = (self.damage_upgrade - 50) // 5 + 1
+        self.damage_upgrade_price = 40
+        self.damage_price_step = 15
+        
+        self.speed_upgrade = 150
+        self.speed_level = (self.speed_upgrade - 150) // 10 + 1
+        self.speed_upgrade_price = 50
+        self.speed_price_step = 20
+        
+    def update_skill_level(self):
+        self.health_level = (self.health_upgrade - 100) // 20 + 1
+        self.damage_level = (self.damage_upgrade - 50) // 5 + 1
+        self.speed_level = (self.speed_upgrade - 150) // 10 + 1
+        
+        
+    def get_upgrade_price(self, skill):
+        if skill == 'health':
+            return self.health_upgrade_price + (self.health_level) * self.health_price_step
+        elif skill == 'damage':
+            return self.damage_upgrade_price + (self.damage_level) * self.damage_price_step
+        elif skill == 'speed':
+            return self.speed_upgrade_price + (self.speed_level) * self.speed_price_step
+        
+    def next_upgrage_price(self):
+        self.next_health_upgrade_price = self.health_upgrade_price + (self.health_level) * self.health_price_step
+        self.next_damage_upgrade_price = self.damage_upgrade_price + (self.damage_level) * self.damage_price_step
+        self.next_speed_upgrade_price = self.speed_upgrade_price + (self.speed_level) * self.speed_price_step
+    
     def update(self):
         self.health = self.game.player.health
         
         self.prev_enemies_count = self.enemies_counter
         self.enemies_counter = len(self.game.enemy_sprites)
         if self.prev_enemies_count > self.enemies_counter:
-            self.money += random.randint(50, 100)
+            self.money += random.randint(15, 20) * (self.prev_enemies_count - self.enemies_counter)
+
 
 
 class Gameplay:
@@ -119,6 +150,7 @@ class Gameplay:
         x, y = surface.width//2, 70
         self.fade_text = FadeText(f'Wave {self.game_stats.wave}', font, (82, 61, 80), (x, y))
         self.fade_text.start()
+        self.game.play_sound('tick')
         
         # starting wave
         wave_settings = load_json('settings/waves.json')[str(self.game_stats.wave)]
@@ -433,6 +465,15 @@ class Shop(InGameWindow):
                 
                 if btn: self.buttons[row][col] = btn
 
+    def can_buy(self, price):
+        if price <= self.game.game_stats.money:
+            self.game.game_stats.money -= price
+            return True
+        else:
+            self.game.play_sound('not_money')
+            return False
+        
+
     def input(self):
         for row in self.buttons:
             for btn in row:
@@ -446,26 +487,43 @@ class Shop(InGameWindow):
                         
                     # heal player
                     if btn.callback == 'heal_player':
+                        price = 30
                         if self.game.player.health != self.game.player.max_health:
-                            self.game.player.health = self.game.player.max_health
-                        
+                            if self.can_buy(price):
+                                self.game.player.health = self.game.player.max_health
+                                self.game.play_sound('heal')
+                                
                         
                     # ====== upgrades ======
+                   
                     if btn.callback == 'health_upgrade':
-                        max_health = self.game.player.max_health == self.game.player.health
-                        print(max_health)
-                        self.game.game_stats.health_upgrade += 20
-                        self.game.player.max_health = self.game.game_stats.health_upgrade
-                        if max_health:
-                            self.game.player.health = self.game.game_stats.health_upgrade
-                    
+                        price = self.game.game_stats.get_upgrade_price('health')
+                        if self.can_buy(price):
+                            self.game.play_sound('skill_upgrade')
+                            max_health = self.game.player.max_health == self.game.player.health
+                            self.game.game_stats.health_upgrade += 20
+                            self.game.game_stats.update_skill_level()
+                            self.game.player.max_health = self.game.game_stats.health_upgrade
+                            if max_health:
+                                self.game.player.health = self.game.game_stats.health_upgrade
+
                     if btn.callback == 'damage_upgrade':
-                        self.game.game_stats.damage_upgrade += 5
-                        self.game.current_gun.damage = self.game.game_stats.damage_upgrade
-                    
+                        price = self.game.game_stats.get_upgrade_price('damage')
+                        if self.can_buy(price):
+                            self.game.play_sound('skill_upgrade')
+                            self.game.game_stats.damage_upgrade += 5
+                            self.game.game_stats.update_skill_level()
+                            self.game.current_gun.damage = self.game.game_stats.damage_upgrade
+
                     if btn.callback == 'speed_upgrade':
-                        self.game.game_stats.speed_upgrade += 10
-                        self.game.player.speed = self.game.game_stats.speed_upgrade
+                        price = self.game.game_stats.get_upgrade_price('speed')
+                        if self.can_buy(price):
+                            self.game.play_sound('skill_upgrade')
+                            self.game.game_stats.speed_upgrade += 10
+                            self.game.game_stats.update_skill_level()
+                            self.game.player.speed = self.game.game_stats.speed_upgrade
+
+                            
 
                     # ====== guns ======
                     all_guns = {
@@ -480,12 +538,20 @@ class Shop(InGameWindow):
                         self.game.change_gun(gun_name)
                     if btn.callback.startswith('buy_'):
                         gun_name = btn.callback.split('_')[1]
-                        btn.text = gun_name
-                        btn.callback = f'select_{gun_name}'
-                        self.game.available_weapons[gun_name] = all_guns[gun_name]
+                        price = all_guns[gun_name].price
+                        if self.can_buy(price):
+                            btn.text = gun_name
+                            btn.callback = f'select_{gun_name}'
+                            self.game.available_weapons[gun_name] = all_guns[gun_name]
+                            self.game.play_sound('buy_gun')
+        
+        
+        if pygame.key.get_just_pressed()[pygame.K_t]:
+            self.game.game_stats.money += 100                    
                     
 
     def draw_stats(self):
+        
         font = pygame.font.Font(None, 36)
         color = (255, 255, 255)
 
@@ -503,17 +569,23 @@ class Shop(InGameWindow):
             base_y = base_btn.center
 
         # Health upgrade
-        health_text = font.render(f"Health: {(self.game.game_stats.health_upgrade - 100) // 20 + 1}", True, color)
+        self.health_level = self.game.game_stats.health_level = (self.game.game_stats.health_upgrade - 100) // 20 + 1
+        
+        health_text = font.render(f"Health: {self.game.game_stats.health_level}", True, color)
         health_rect = health_text.get_rect(center=(base_x, base_y))
         self.display_surface.blit(health_text, health_rect)
 
         # Damage upgrade
-        damage_text = font.render(f"Damage: {(self.game.game_stats.damage_upgrade - 50) // 5 + 1}", True, color)
+        self.damage_level = self.game.game_stats.damage_level = (self.game.game_stats.damage_upgrade - 50) // 5 + 1
+        
+        damage_text = font.render(f"Damage: {self.game.game_stats.damage_level}", True, color)
         damage_rect = damage_text.get_rect(center=(base_x, base_y + line_spacing))
         self.display_surface.blit(damage_text, damage_rect)
 
         # Speed upgrade
-        speed_text = font.render(f"Speed: {(self.game.game_stats.speed_upgrade - 150) // 10 + 1}", True, color)
+        self.speed_level = self.game.game_stats.speed_level = (self.game.game_stats.speed_upgrade - 150) // 10 + 1
+        
+        speed_text = font.render(f"Speed: {self.game.game_stats.speed_level}", True, color)
         speed_rect = speed_text.get_rect(center=(base_x, base_y + 2 * line_spacing))
         self.display_surface.blit(speed_text, speed_rect)
 
@@ -522,6 +594,27 @@ class Shop(InGameWindow):
         current_gun_rect = current_gun.get_rect(center=(base_x, base_y + 4 * line_spacing))
         self.display_surface.blit(current_gun, current_gun_rect)
 
+        
+        # ===== skill upgrade prices ======
+        self.game.game_stats.next_upgrage_price()
+        
+        for row in range(1, 4):
+            col = 2
+            bttn = self.buttons[row][col]
+            base_x = bttn.rect.centerx - 140
+            base_y = bttn.rect.centery 
+            if bttn.callback.split('_')[0] == 'health':
+                health_text = font.render(f"{self.game.game_stats.next_health_upgrade_price}$", True, color)
+                health_rect = health_text.get_rect(center=(base_x, base_y))
+                self.display_surface.blit(health_text, health_rect)
+            if bttn.callback.split('_')[0] == 'damage':
+                damage_text = font.render(f"{self.game.game_stats.next_damage_upgrade_price}$", True, color)
+                damage_rect = damage_text.get_rect(center=(base_x, base_y))
+                self.display_surface.blit(damage_text, damage_rect)
+            if bttn.callback.split('_')[0] == 'speed':
+                speed_text = font.render(f"{self.game.game_stats.next_speed_upgrade_price}$", True, color)
+                speed_rect = speed_text.get_rect(center=(base_x, base_y))
+                self.display_surface.blit(speed_text, speed_rect)
 
 
     def draw(self):

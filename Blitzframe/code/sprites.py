@@ -162,7 +162,8 @@ class Player(Sprite):
             return  
         
         self.health -= enemy.damage
-        self.game.sound.sounds['player_damage'].play()
+        self.game.play_sound('player_damage')
+        
         
         # camera chake
         if self.health <= 20:
@@ -224,7 +225,6 @@ class Enemy(AnimatedSprite):
         super().__init__(groups, pos, frames)
         self.death_timer = Timer(200, func=self.kill)
         self.player = player
-        self.max_health = self.health = 100 * health_multiplier
         
         self.base_speed = self.speed = 100 * speed_multiplier
         self.base_damage = self.damage = 15 * damage_multiplier
@@ -253,7 +253,7 @@ class Enemy(AnimatedSprite):
             self.destroy()
 
     def destroy(self):
-        self.player.game.sound.sounds['enemy_kill'].play()
+        self.player.game.play_sound('enemy_kill')
         self.death_timer.activate()
         self.animation_speed = 0
         self.image = pygame.mask.from_surface(self.image).to_surface()
@@ -308,14 +308,16 @@ class Enemy(AnimatedSprite):
 class NormalEnemy(Enemy):
     def __init__(self, groups, pos, frames, player, collision_sprites, health_multiplier=1,  speed_multiplier=1, damage_multiplier=1):
         super().__init__(groups, pos, frames, player, collision_sprites, health_multiplier, speed_multiplier, damage_multiplier)  
-        self.speed = random.randint(150, 180) * speed_multiplier
-       
+        self.speed = random.randint(100, 120) * speed_multiplier
+        self.max_health = self.health = 100 * health_multiplier
+        self.base_damage = self.damage = 25 * damage_multiplier
 
 class FastEnemy(Enemy):
     def __init__(self, groups, pos, frames, player, collision_sprites, health_multiplier=1,  speed_multiplier=1, damage_multiplier=1):
         super().__init__(groups, pos, frames, player, collision_sprites, health_multiplier,  speed_multiplier, damage_multiplier)
-        self.speed = random.randint(200, 250) * speed_multiplier
+        self.speed = random.randint(150, 180) * speed_multiplier
         self.max_health = self.health = 50 * health_multiplier
+        self.base_damage = self.damage = 15 * damage_multiplier
         
         
 # ================== guns & bulet ====================
@@ -422,7 +424,8 @@ class Gun(pygame.sprite.Sprite):
 
 
 class Pistol(Gun):
-    gun_name = 'pistol'
+    gun_name = 'pistol'    
+    price = 0
     def __init__(self, groups, player):
         self.all_sprites, self.bullet_sprites = groups
         super().__init__(self.all_sprites, player)
@@ -435,7 +438,7 @@ class Pistol(Gun):
 
     def create_bulet(self):
         if not self.cooldown_timer:
-            self.player.game.sound.sounds['pistol_shot'].play()
+            self.player.game.play_sound('pistol_shot')
             Bullet((self.all_sprites, self.bullet_sprites), self.rect.center+self.player_direction*10, self.bullet_surf, self.player_direction, self.damage)
             self.cooldown_timer.activate()
     
@@ -446,6 +449,7 @@ class Pistol(Gun):
 
 class Shotgun(Gun):
     gun_name = 'shotgun'
+    price = 150
     def __init__(self, groups, player):
         self.all_sprites, self.bullet_sprites = groups
         super().__init__(self.all_sprites, player)
@@ -460,8 +464,8 @@ class Shotgun(Gun):
 
     def create_bulet(self):
         if not self.cooldown_timer:
-            self.player.game.sound.sounds['shotgun_shot'].play()
-            self.player.game.sound.sounds['shotgun_reload'].play()
+            self.player.game.play_sound('shotgun_shot')
+            self.player.game.play_sound('shotgun_reload')
             
             spread_angle = 25  
             base_angle = atan2(self.player_direction.y, self.player_direction.x)
@@ -482,6 +486,7 @@ class Shotgun(Gun):
         
 class SniperRifle(Gun):
     gun_name = 'sniper'
+    price = 200
     def __init__(self, groups, player):
         self.all_sprites, self.bullet_sprites = groups
         super().__init__(self.all_sprites, player)
@@ -494,8 +499,8 @@ class SniperRifle(Gun):
     
     def create_bulet(self):
         if not self.cooldown_timer:
-            self.player.game.sound.sounds['sniper_shot'].play()
-            self.reload_timer = Timer(400, False, True, lambda: self.player.game.sound.sounds['sniper_reload'].play())
+            self.player.game.play_sound('sniper_shot')
+            self.reload_timer = Timer(400, False, True, lambda: self.player.game.play_sound('sniper_reload'))
             Bullet((self.all_sprites, self.bullet_sprites), self.rect.center+self.player_direction*10, self.bullet_surf, self.player_direction, self.damage, lifetime=2000, speed=3000)
             self.cooldown_timer.activate()
             
@@ -509,6 +514,7 @@ class SniperRifle(Gun):
         
 class MachineGun(Gun):
     gun_name = 'machine-gun'
+    price = 100
     def __init__(self, groups, player):
         self.all_sprites, self.bullet_sprites = groups
         super().__init__(self.all_sprites, player)
@@ -521,7 +527,7 @@ class MachineGun(Gun):
     
     def create_bulet(self):
         if not self.cooldown_timer:
-            self.player.game.sound.sounds['machine-gun_shot'].play()
+            self.player.game.play_sound('machine-gun_shot')
             Bullet((self.all_sprites, self.bullet_sprites), self.rect.center+self.player_direction*10, self.bullet_surf, self.player_direction, self.damage, lifetime=1000, speed=600)
             self.cooldown_timer.activate()
             

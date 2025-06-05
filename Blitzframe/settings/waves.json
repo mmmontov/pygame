@@ -1,34 +1,111 @@
 {
-    "1": {
-        "enemies": {
-            "normal": 2
-        },
-        "enemies_multiplier": {
-            "speed": 1,
-            "damage": 1,
-            "health": 1
-        }
+  "1": {
+    "enemies": {
+      "normal": 3
     },
-    "2": {
-        "enemies": {
-            "normal": 4,
-            "fast": 2
-        },
-        "enemies_multiplier": {
-            "speed": 1.1,
-            "damage": 1.1,
-            "health": 1.1
-        }
-    },
-    "3": {
-        "enemies": {
-            "normal": 6,
-            "fast": 4
-        },
-        "enemies_multiplier": {
-            "speed": 1.2,
-            "damage": 1.2,
-            "health": 1.2
-        }
+    "enemies_multiplier": {
+      "speed": 1.0,
+      "damage": 1.0,
+      "health": 1.0
     }
+  },
+  "2": {
+    "enemies": {
+      "normal": 4,
+      "fast": 2
+    },
+    "enemies_multiplier": {
+      "speed": 1.05,
+      "damage": 1.05,
+      "health": 1.1
+    }
+  },
+  "3": {
+    "enemies": {
+      "normal": 6,
+      "fast": 4
+    },
+    "enemies_multiplier": {
+      "speed": 1.1,
+      "damage": 1.1,
+      "health": 1.15
+    }
+  },
+  "4": {
+    "enemies": {
+      "normal": 8,
+      "fast": 6
+    },
+    "enemies_multiplier": {
+      "speed": 1.15,
+      "damage": 1.15,
+      "health": 1.2
+    }
+  },
+  "5": {
+    "enemies": {
+      "normal": 10,
+      "fast": 8
+    },
+    "enemies_multiplier": {
+      "speed": 1.2,
+      "damage": 1.2,
+      "health": 1.25
+    }
+  },
+  "6": {
+    "enemies": {
+      "normal": 12,
+      "fast": 10
+    },
+    "enemies_multiplier": {
+      "speed": 1.3,
+      "damage": 1.3,
+      "health": 1.3
+    }
+  },
+  "7": {
+    "enemies": {
+      "normal": 14,
+      "fast": 12
+    },
+    "enemies_multiplier": {
+      "speed": 1.35,
+      "damage": 1.35,
+      "health": 1.35
+    }
+  },
+  "8": {
+    "enemies": {
+      "normal": 16,
+      "fast": 14
+    },
+    "enemies_multiplier": {
+      "speed": 1.4,
+      "damage": 1.4,
+      "health": 1.4
+    }
+  },
+  "9": {
+    "enemies": {
+      "normal": 18,
+      "fast": 16
+    },
+    "enemies_multiplier": {
+      "speed": 1.45,
+      "damage": 1.45,
+      "health": 1.5
+    }
+  },
+  "10": {
+    "enemies": {
+      "normal": 20,
+      "fast": 18
+    },
+    "enemies_multiplier": {
+      "speed": 1.5,
+      "damage": 1.5,
+      "health": 1.6
+    }
+  }
 }
