@@ -32,6 +32,6 @@ class Tilemap:
             sprite.rect = sprite.rect.inflate(-(sprite.rect.width//6), -(sprite.rect.height//4))
             
         for obj in self.map.get_layer_by_name('Collisions'):
-            Sprite(self.collision_sprites, (obj.x, obj.y), pygame.Surface((obj.width, obj.height)))
+            Sprite(self.collision_sprites, (obj.x, obj.y), pygame.Surface((obj.width, obj.height), pygame.SRCALPHA))
             
         

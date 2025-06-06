@@ -15,6 +15,8 @@ class Button(pygame.sprite.Sprite):
         self.text_color = text_color
         self.visible = True
         self.callback = callback
+        self.was_hovered = False
+        
         
         self.image = pygame.Surface(size)
         self.rect = self.image.get_frect(center = pos)
@@ -68,7 +70,6 @@ class Slider(pygame.sprite.Sprite):
                  label_text: str = '', label_font: pygame.Font = None, label_color='black'):
         super().__init__(groups)
 
-        # параметры
         self.pos = pos
         self.width = size[0]
         self.height = size[1]
@@ -79,55 +80,60 @@ class Slider(pygame.sprite.Sprite):
         self.color_fg = color_fg
         self.handle_color = handle_color
 
-        # текстовая метка
         self.label_text = label_text
         self.label_font = label_font
         self.label_color = label_color
 
-        # если есть текст, рендерим его
         self.label_surf = None
         self.label_rect = None
         label_width = 0
+        label_height = 0
         if self.label_text and self.label_font:
             self.label_surf = self.label_font.render(self.label_text, True, self.label_color)
-            self.label_rect = self.label_surf.get_frect(midright=(0, self.height // 2 + 5))
-            label_width = self.label_rect.width + 10  # отступ справа
+            self.label_rect = self.label_surf.get_rect()
+            label_width = self.label_rect.width + 10
+            label_height = self.label_rect.height
 
-        # поверхность и прямоугольник
-        total_width = self.width + label_width
-        self.image = pygame.Surface((total_width + 50, self.height + 10), pygame.SRCALPHA)
-        self.rect = self.image.get_frect(center=pos)
+        total_width = self.width + label_width + 20
+        total_height = max(self.height, label_height) + 10
 
-        # внутреннее состояние
-        self.dragging = False
+        self.image = pygame.Surface((total_width, total_height), pygame.SRCALPHA)
+        self.rect = self.image.get_rect(center=pos)
 
         self.label_width = label_width
+        self.label_height = label_height
+        self.total_height = total_height
+
+        self.dragging = False
+
         self.update_slider()
 
     def update_slider(self):
-        self.image.fill((0, 0, 0, 0))  # очистка с прозрачностью
+        self.image.fill((0, 0, 0, 0))
 
-        # если есть текст, рисуем его
+        slider_y = (self.total_height - self.height) // 2
+
+        # draw label
         if self.label_surf:
-            self.image.blit(self.label_surf, (0, (self.image.get_height() - self.label_surf.get_height()) // 2))
+            label_y = (self.total_height - self.label_height) // 2
+            self.image.blit(self.label_surf, (0, label_y))
 
-        # координаты прогресса
         progress_width = int((self.value - self.min_value) / (self.max_value - self.min_value) * self.width)
 
-        # фон
+        # background
         pygame.draw.rect(
             self.image, self.color_bg,
-            (self.label_width, self.height // 2, self.width, self.height), border_radius=5
+            (self.label_width, slider_y, self.width, self.height), border_radius=5
         )
-        # активная часть
+        # foreground
         pygame.draw.rect(
             self.image, self.color_fg,
-            (self.label_width, self.height // 2, progress_width, self.height), border_radius=5
+            (self.label_width, slider_y, progress_width, self.height), border_radius=5
         )
-        # ползунок
+        # handle
         pygame.draw.circle(
             self.image, self.handle_color,
-            (self.label_width + progress_width, self.height // 2 + self.height // 2), 8
+            (self.label_width + progress_width, slider_y + self.height // 2), 10
         )
 
     def get_value(self):
@@ -151,3 +157,17 @@ class Slider(pygame.sprite.Sprite):
 
     def update(self, dt):
         self.input()
+        
+        
+def draw_text_window(surface, pos, text, font=None, padding=20, bg_color='#cccccc', text_color='black', border_radius=10):
+    if not font:
+        font = pygame.font.Font(None, 30)
+    text_surf = font.render(text, True, text_color)
+    text_rect = text_surf.get_rect()
+    width = text_rect.width + padding * 2
+    height = text_rect.height + padding * 2
+    window_surf = pygame.Surface((width, height), pygame.SRCALPHA)
+    pygame.draw.rect(window_surf, bg_color, window_surf.get_rect(), border_radius=border_radius)
+    window_surf.blit(text_surf, (padding, padding))
+    window_rect = window_surf.get_rect(center=(pos[0]-width//2, pos[1]))
+    surface.blit(window_surf, window_rect)

@@ -39,3 +39,7 @@ class AllSprites(pygame.sprite.Group):
 
         for sprite in ground_sprites + objects_sprites:
             self.display_surface.blit(sprite.image, sprite.rect.topleft + self.offset + self.shake_offset)
+            
+            # отрисовка здоровья мобов
+            if hasattr(sprite, 'draw_health'):
+                sprite.draw_health(self.display_surface, self.offset + self.shake_offset)

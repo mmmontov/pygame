@@ -12,6 +12,7 @@ class InGameStats:
         self.money = 0
         self.health = self.game.player.health
         self.wave = 1
+        self.kills = 0
         
         # wave
         self.prev_enemies_count = self.enemies_counter = 0
@@ -19,24 +20,27 @@ class InGameStats:
         
         # upgrades
         self.health_upgrade = 100
-        self.health_level = (self.health_upgrade - 100) // 20 + 1
+        self.health_upgrade_step = 20
+        self.health_level = (self.health_upgrade - 100) // self.health_upgrade_step + 1
         self.health_upgrade_price = 30
         self.health_price_step = 10
         
         self.damage_upgrade = 50
-        self.damage_level = (self.damage_upgrade - 50) // 5 + 1
+        self.damage_upgrade_step = 4
+        self.damage_level = (self.damage_upgrade - 50) // self.damage_upgrade_step + 1
         self.damage_upgrade_price = 40
         self.damage_price_step = 15
         
         self.speed_upgrade = 150
-        self.speed_level = (self.speed_upgrade - 150) // 10 + 1
+        self.speed_upgrade_step = 10
+        self.speed_level = (self.speed_upgrade - 150) // self.speed_upgrade_step + 1
         self.speed_upgrade_price = 50
         self.speed_price_step = 20
         
     def update_skill_level(self):
-        self.health_level = (self.health_upgrade - 100) // 20 + 1
-        self.damage_level = (self.damage_upgrade - 50) // 5 + 1
-        self.speed_level = (self.speed_upgrade - 150) // 10 + 1
+        self.health_level = (self.health_upgrade - 100) // self.health_upgrade_step + 1
+        self.damage_level = (self.damage_upgrade - 50) // self.damage_upgrade_step + 1
+        self.speed_level = (self.speed_upgrade - 150) // self.speed_upgrade_step + 1
         
         
     def get_upgrade_price(self, skill):
@@ -59,7 +63,7 @@ class InGameStats:
         self.enemies_counter = len(self.game.enemy_sprites)
         if self.prev_enemies_count > self.enemies_counter:
             self.money += random.randint(15, 20) * (self.prev_enemies_count - self.enemies_counter)
-
+            self.kills += self.prev_enemies_count - self.enemies_counter
 
 
 class Gameplay:
@@ -72,11 +76,11 @@ class Gameplay:
         if not hasattr(self.game, 'player'):
             self.game.gameplay = self
             self.game.player = Player((self.game.all_sprites), self.game.tilemap.player_spawner(), self.game.collision_sprites, self.game.player_frames, game=self.game)
+            self.game.game_stats = self.game_stats = InGameStats(self.game)
             self.game.current_gun = Pistol((self.game.all_sprites, self.game.bullet_sprites), self.game.player)
-            self.game_stats = InGameStats(self.game)
-            self.game.game_stats = self.game_stats
             self.start_wave_timer()
-               
+        self.game.change_gun(self.game.current_gun.gun_name, sound=False)    
+    
     def start_wave_timer(self):
         self.starting_wave_timer = Timer(2000, False, True, self.starting_wave)
 
@@ -166,7 +170,7 @@ class Gameplay:
             for _ in range(enemy_num):
                 
                 self.spawn_timers.append(Timer(
-                    random.randint(1000, 2000), 
+                    random.randint(1000, self.game_stats.wave * 1000), 
                     False, 
                     True, 
                     lambda enemy_name = enemy_name: enemies_dict[enemy_name]((
@@ -201,13 +205,23 @@ class Gameplay:
             if sprite_collision:
                 bullet.kill()
                 for sprite in sprite_collision:
-                    sprite.take_damage(bullet.damage)
+                    if sprite.collision_active:
+                        sprite.take_damage(bullet.damage)
         
         for enemy in self.game.enemy_sprites:
             if enemy.rect.colliderect(self.game.player.rect):
                 self.game.player.take_damage(enemy)
                 enemy.deal_damage()
         
+    def check_player_alive(self):
+        if self.game_stats.health <= 0:
+            self.game.player.health = 0
+            self.game.player.death()  
+            self.game.current_gun.kill()
+            if not hasattr(self, 'game_over_timer'):
+                self.game_over_timer = Timer(2000, False, True, lambda: self.game.change_state('game_over'))
+            
+    
            
     def draw(self):
         self.game.all_sprites.draw(self.game.player.rect.center)
@@ -224,6 +238,7 @@ class Gameplay:
         self.input()
         self.game_stats.update()
         self.collision()
+        self.check_player_alive()
         
         # timers
         self.starting_wave_timer.update()
@@ -231,13 +246,16 @@ class Gameplay:
         if hasattr(self, 'ending_wave_timer'):
             self.ending_wave_timer.update()
         
+        if hasattr(self, 'game_over_timer'):
+            self.game_over_timer.update()    
+        
+        
         if hasattr(self, 'spawn_timers'):
             for timer in self.spawn_timers:
                 timer.update()
                 if not timer: 
                     self.spawn_timers.remove(timer)
                     
-
 
 class InGameWindow:
     def __init__(self, game, title='', size=(400, 300)):
@@ -260,7 +278,7 @@ class InGameWindow:
         overlay = pygame.Surface(self.display_surface.get_size(), pygame.SRCALPHA)
         overlay.fill(self.bg_color)
         self.display_surface.blit(overlay, (0, 0))
-        # окно с закруглёнными краями
+        # окно
         window_surf = pygame.Surface(self.window_rect.size, pygame.SRCALPHA)
         window_surf.fill((0, 0, 0, 0)) 
         pygame.draw.rect(
@@ -270,6 +288,7 @@ class InGameWindow:
             border_radius=20  
         )
         self.display_surface.blit(window_surf, self.window_rect.topleft)
+        self.menu_window_rect = window_surf.get_rect()
         # заголовок
         if self.title:
             title_surf = self.font.render(self.title, True, 'white')
@@ -303,6 +322,7 @@ class Pause(InGameWindow):
             bg_color='#CA7842',
             text_color='#4B352A'
         )
+        # main menu
         self.menu_button = Button(
             groups=self.game.buttons_sprites,
             pos=(self.window_rect.x + self.window_rect.width//2, self.window_rect.y + self.window_rect.height//3 + 100),
@@ -473,8 +493,14 @@ class Shop(InGameWindow):
             self.game.play_sound('not_money')
             return False
         
-
     def input(self):
+        self.all_guns = {
+                Pistol.gun_name: Pistol,
+                Shotgun.gun_name: Shotgun,
+                SniperRifle.gun_name: SniperRifle,
+                MachineGun.gun_name: MachineGun
+            }
+        
         for row in self.buttons:
             for btn in row:
                 btn: Button
@@ -501,7 +527,7 @@ class Shop(InGameWindow):
                         if self.can_buy(price):
                             self.game.play_sound('skill_upgrade')
                             max_health = self.game.player.max_health == self.game.player.health
-                            self.game.game_stats.health_upgrade += 20
+                            self.game.game_stats.health_upgrade += self.game.game_stats.health_upgrade_step
                             self.game.game_stats.update_skill_level()
                             self.game.player.max_health = self.game.game_stats.health_upgrade
                             if max_health:
@@ -511,45 +537,42 @@ class Shop(InGameWindow):
                         price = self.game.game_stats.get_upgrade_price('damage')
                         if self.can_buy(price):
                             self.game.play_sound('skill_upgrade')
-                            self.game.game_stats.damage_upgrade += 5
+                            self.game.game_stats.damage_upgrade += self.game.game_stats.damage_upgrade_step
                             self.game.game_stats.update_skill_level()
                             self.game.current_gun.damage = self.game.game_stats.damage_upgrade
+                            print(self.game.game_stats.damage_upgrade)
 
                     if btn.callback == 'speed_upgrade':
                         price = self.game.game_stats.get_upgrade_price('speed')
                         if self.can_buy(price):
                             self.game.play_sound('skill_upgrade')
-                            self.game.game_stats.speed_upgrade += 10
+                            self.game.game_stats.speed_upgrade += self.game.game_stats.speed_upgrade_step
                             self.game.game_stats.update_skill_level()
                             self.game.player.speed = self.game.game_stats.speed_upgrade
 
                             
 
                     # ====== guns ======
-                    all_guns = {
-                        Pistol.gun_name: Pistol,
-                        Shotgun.gun_name: Shotgun,
-                        SniperRifle.gun_name: SniperRifle,
-                        MachineGun.gun_name: MachineGun
-                    }
-                    
                     if btn.callback.startswith('select_'):
                         gun_name = btn.callback.split('_')[1]
                         self.game.change_gun(gun_name)
                     if btn.callback.startswith('buy_'):
                         gun_name = btn.callback.split('_')[1]
-                        price = all_guns[gun_name].price
+                        price = self.all_guns[gun_name].price
                         if self.can_buy(price):
                             btn.text = gun_name
                             btn.callback = f'select_{gun_name}'
-                            self.game.available_weapons[gun_name] = all_guns[gun_name]
+                            self.game.available_weapons[gun_name] = self.all_guns[gun_name]
+                            self.game.change_gun(gun_name)
                             self.game.play_sound('buy_gun')
+        
+        
+            
         
         
         if pygame.key.get_just_pressed()[pygame.K_t]:
             self.game.game_stats.money += 100                    
                     
-
     def draw_stats(self):
         
         font = pygame.font.Font(None, 36)
@@ -569,21 +592,21 @@ class Shop(InGameWindow):
             base_y = base_btn.center
 
         # Health upgrade
-        self.health_level = self.game.game_stats.health_level = (self.game.game_stats.health_upgrade - 100) // 20 + 1
+        self.health_level = self.game.game_stats.health_level = (self.game.game_stats.health_upgrade - 100) // self.game.game_stats.health_upgrade_step + 1
         
         health_text = font.render(f"Health: {self.game.game_stats.health_level}", True, color)
         health_rect = health_text.get_rect(center=(base_x, base_y))
         self.display_surface.blit(health_text, health_rect)
 
         # Damage upgrade
-        self.damage_level = self.game.game_stats.damage_level = (self.game.game_stats.damage_upgrade - 50) // 5 + 1
+        self.damage_level = self.game.game_stats.damage_level = (self.game.game_stats.damage_upgrade - 50) // self.game.game_stats.damage_upgrade_step + 1
         
         damage_text = font.render(f"Damage: {self.game.game_stats.damage_level}", True, color)
         damage_rect = damage_text.get_rect(center=(base_x, base_y + line_spacing))
         self.display_surface.blit(damage_text, damage_rect)
 
         # Speed upgrade
-        self.speed_level = self.game.game_stats.speed_level = (self.game.game_stats.speed_upgrade - 150) // 10 + 1
+        self.speed_level = self.game.game_stats.speed_level = (self.game.game_stats.speed_upgrade - 150) // self.game.game_stats.speed_upgrade_step + 1
         
         speed_text = font.render(f"Speed: {self.game.game_stats.speed_level}", True, color)
         speed_rect = speed_text.get_rect(center=(base_x, base_y + 2 * line_spacing))
@@ -616,6 +639,17 @@ class Shop(InGameWindow):
                 speed_rect = speed_text.get_rect(center=(base_x, base_y))
                 self.display_surface.blit(speed_text, speed_rect)
 
+        # ===== guns description =====
+        for row in self.buttons:
+            for btn in row:
+                btn: Button
+                if btn and btn.was_hovered and btn.callback.startswith(('select_', 'buy_')):
+                    alert_x = btn.rect.x - 20
+                    alert_y = btn.rect.centery
+                    gun_name = btn.callback.split('_')[1]
+                    text = self.all_guns[gun_name].description
+                    draw_text_window(self.game.display_surface, (alert_x, alert_y), text)
+
 
     def draw(self):
         super().draw()
@@ -624,6 +658,66 @@ class Shop(InGameWindow):
         # health & money
         self.game.states['gameplay'].draw_game_ui()
         
+    def update(self, dt):
+        super().update(dt)
+        self.input()
+        
+        
+class GameOver(InGameWindow):
+    state_name = 'game_over'
+    music_state = 'gameplay'
+    def __init__(self, game, title='GAME OVER', size=(400, 300)):
+        super().__init__(game, title, size)
+        
+        
+    def on_enter(self):
+        super().on_enter()
+        self.game.game_paused = True
+        
+    def create_buttons(self):
+        # main menu
+        self.menu_button = Button(
+            groups=self.game.buttons_sprites,
+            pos=(self.window_rect.x + self.window_rect.width//2, self.window_rect.y + self.window_rect.height//3 + 100),
+            text='Menu',
+            font=self.font,
+            bg_color='#CA7842',
+            text_color='#4B352A'
+        )
+        
+    def input(self):
+        if self.menu_button.is_clicked():
+            self.game.change_state('main_menu')
+            self.game.reset_game()
+
+    def draw_stats(self):
+        
+        font = pygame.font.Font(None, 36)
+        color = (255, 255, 255)
+
+        
+        line_spacing = 40
+        
+ 
+        base_x = self.window_rect.centerx
+        base_y = self.window_rect.top + line_spacing*2 
+
+
+        # kills 
+        kills_text = font.render(f"kills: {self.game.game_stats.kills}", True, color)
+        kills_rect = kills_text.get_rect(center=(base_x, base_y))
+        self.display_surface.blit(kills_text, kills_rect)
+        
+        # waves 
+        base_y = self.window_rect.top + line_spacing*3 
+        waves_text = font.render(f"waves: {self.game.game_stats.wave}", True, color)
+        waves_rect = waves_text.get_rect(center=(base_x, base_y))
+        self.display_surface.blit(waves_text, waves_rect)
+
+    def draw(self):
+        super().draw()
+        self.draw_stats()
+
 
     def update(self, dt):
         super().update(dt)

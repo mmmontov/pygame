@@ -26,6 +26,8 @@ class Player(Sprite):
         self.game = game
         self.all_sprites = groups
         self.frames = frames
+        self.death_frame = pygame.image.load(join('images', 'player', 'death.png')).convert_alpha()
+        self.death_frame = pygame.transform.scale(self.death_frame, (self.death_frame.get_width() * 3, self.death_frame.get_height() * 3))
         self.state = 'down'
         self.frame_index = 1
         self.last_state = 'down'
@@ -41,6 +43,7 @@ class Player(Sprite):
 
         # health
         self.health = self.max_health = 100
+        self.player_alive = True
 
         # colisions
         self.collision_sprites = collision_sprites
@@ -156,12 +159,17 @@ class Player(Sprite):
 
         self.rect.center = self.hitbox_rect.center
 
+    def death(self):
+        self.player_alive = False
+        self.image = self.death_frame
 
     def take_damage(self, enemy):
         if hasattr(self, 'knockback_timer') and self.knockback_timer and self.knockback_timer.active:
             return  
         
-        self.health -= enemy.damage
+        self.health -= int(enemy.damage)
+        
+        
         self.game.play_sound('player_damage')
         
         
@@ -209,14 +217,15 @@ class Player(Sprite):
                 
 
     def update(self, dt):  
-        self.input()
-        self.move(dt)
-        
-        self.apply_knockback(dt)
-        self.animate(dt)
-        
-        self.step_timer.update()
-        if self.knockback_freeze_timer: self.knockback_freeze_timer.update()
+        if self.player_alive:
+            self.input()
+            self.move(dt)
+            
+            self.apply_knockback(dt)
+            self.animate(dt)
+            
+            self.step_timer.update()
+            if self.knockback_freeze_timer: self.knockback_freeze_timer.update()
 
 # =============== enemies ====================
         
@@ -225,6 +234,7 @@ class Enemy(AnimatedSprite):
         super().__init__(groups, pos, frames)
         self.death_timer = Timer(200, func=self.kill)
         self.player = player
+        self.collision_active = True
         
         self.base_speed = self.speed = 100 * speed_multiplier
         self.base_damage = self.damage = 15 * damage_multiplier
@@ -249,10 +259,12 @@ class Enemy(AnimatedSprite):
     
     def take_damage(self, damage):
         self.health -= damage
+        # print(damage)
         if self.health <= 0:
             self.destroy()
 
     def destroy(self):
+        self.collision_active = False
         self.player.game.play_sound('enemy_kill')
         self.death_timer.activate()
         self.animation_speed = 0
@@ -282,25 +294,27 @@ class Enemy(AnimatedSprite):
         self.hitbox_rect.y += self.direction.y * self.speed*dt
         self.collision('vertical')
         self.rect.center = self.hitbox_rect.center
+        
     
-    def draw_health(self):
+    def draw_health(self, surface, offset):
+        '''отрисовывается в groups.py'''
         bar_width = 40
         bar_height = 6
 
-        # Health ratio
         health_ratio = max(self.health / self.max_health, 0)
         current_width = int(bar_width * health_ratio)
 
-        pygame.draw.rect(self.image, (60, 60, 60), (self.image.get_width()//2 - bar_width//2, 2, bar_width, bar_height), border_radius=10)
-        pygame.draw.rect(self.image, (220, 30, 30), (self.image.get_width()//2 - bar_width//2, 2, current_width, bar_height), border_radius=10)
+        x = self.rect.centerx + offset.x - bar_width // 2
+        y = self.rect.top + offset.y - 12
 
+        pygame.draw.rect(surface, (60, 60, 60), (x, y, bar_width, bar_height), border_radius=3)
+        pygame.draw.rect(surface, (220, 30, 30), (x, y, current_width, bar_height), border_radius=3)
     
     def update(self, dt):
         self.death_timer.update()
         
         if not self.death_timer:
             self.deal_damage_timer.update()
-            self.draw_health()
             self.move(dt)
             self.animate(dt)
         
@@ -337,6 +351,7 @@ class Bullet(Sprite):
 
 
 class Gun(pygame.sprite.Sprite):
+    description = 'просто оружие'
     def __init__(self, groups, player: Player):
         self.all_sprites = groups
         self.player = player
@@ -357,7 +372,7 @@ class Gun(pygame.sprite.Sprite):
         self.offset = pygame.Vector2(13, 13)
         self.last_horizontal = 1
         
-        self.damage = 50
+        self.base_damage = self.player.game.game_stats.damage_upgrade
 
     def get_direction(self):
         mouse_pos = pygame.Vector2(pygame.mouse.get_pos())
@@ -421,11 +436,14 @@ class Gun(pygame.sprite.Sprite):
         self.update_side()
         self.rotate_gun()
         self.input()
+        
+        self.base_damage = self.player.game.game_stats.damage_upgrade
 
 
 class Pistol(Gun):
     gun_name = 'pistol'    
     price = 0
+    description = 'Пистолет - просто обычный пистолет,\nничего необычного'
     def __init__(self, groups, player):
         self.all_sprites, self.bullet_sprites = groups
         super().__init__(self.all_sprites, player)
@@ -439,7 +457,7 @@ class Pistol(Gun):
     def create_bulet(self):
         if not self.cooldown_timer:
             self.player.game.play_sound('pistol_shot')
-            Bullet((self.all_sprites, self.bullet_sprites), self.rect.center+self.player_direction*10, self.bullet_surf, self.player_direction, self.damage)
+            Bullet((self.all_sprites, self.bullet_sprites), self.rect.center+self.player_direction*10, self.bullet_surf, self.player_direction, self.base_damage)
             self.cooldown_timer.activate()
     
     def update(self, dt):
@@ -449,15 +467,16 @@ class Pistol(Gun):
 
 class Shotgun(Gun):
     gun_name = 'shotgun'
+    description = 'Дробовик - хорошее оружие для\nближней дистанции.\nВыстреливает сразу много пуль,\nкоторые задевают нескольких противников.'
     price = 150
     def __init__(self, groups, player):
         self.all_sprites, self.bullet_sprites = groups
         super().__init__(self.all_sprites, player)
         
         self.bullets_count = 5
-        self.damage *= 0.5
+        self.damage = self.base_damage * 0.55
         
-        self.cooldown_timer = Timer(1300)
+        self.cooldown_timer = Timer(1200)
 
     def load_surf(self):
         return pygame.image.load(join('images', 'guns', 'pistol.png')).convert_alpha()
@@ -467,7 +486,7 @@ class Shotgun(Gun):
             self.player.game.play_sound('shotgun_shot')
             self.player.game.play_sound('shotgun_reload')
             
-            spread_angle = 25  
+            spread_angle = 35 
             base_angle = atan2(self.player_direction.y, self.player_direction.x)
             for _ in range(self.bullets_count):
                 random_offset = random.uniform(-spread_angle/2, spread_angle/2)
@@ -486,12 +505,13 @@ class Shotgun(Gun):
         
 class SniperRifle(Gun):
     gun_name = 'sniper'
+    description = 'Снайперка - хороша для дальних дистанций\nможет прострелисть несколько противников,\nесли они стоят рядом.'
     price = 200
     def __init__(self, groups, player):
         self.all_sprites, self.bullet_sprites = groups
         super().__init__(self.all_sprites, player)
         
-        self.damage *= 3
+        self.damage = self.base_damage * 3
         self.cooldown_timer = Timer(1000)
         
     def load_surf(self):
@@ -514,13 +534,14 @@ class SniperRifle(Gun):
         
 class MachineGun(Gun):
     gun_name = 'machine-gun'
+    description = 'Автомат - скорострельное, удобное, крутое.\nНо маловато урона...'
     price = 100
     def __init__(self, groups, player):
         self.all_sprites, self.bullet_sprites = groups
         super().__init__(self.all_sprites, player)
         
-        self.damage *= 0.25
-        self.cooldown_timer = Timer(200)
+        self.damage = self.base_damage * 0.35
+        self.cooldown_timer = Timer(100)
         
     def load_surf(self):
         return pygame.image.load(join('images', 'guns', 'pistol.png')).convert_alpha()

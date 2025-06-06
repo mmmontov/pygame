@@ -13,15 +13,21 @@ class Game:
     def __init__(self):
         # game init
         pygame.init()
-        self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+        self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.RESIZABLE)
         pygame.display.set_caption('Blitzframe')
         self.clock = pygame.time.Clock()
         self.running = True
         
         self.reset_game()  # инициализация состояния игры
         
+        # menu background
+        screen_size = pygame.display.get_surface().get_size()
+        self.background = states.menu.Background('images/menu_background.png', scale=2, screen_size=screen_size)
+
+        
         # sounds
-        self.volume = 0.5
+        self.sounds_volume = 0.5
+        self.music_volume = 0.5
         self.sound = Sound(self)
         
 
@@ -52,16 +58,18 @@ class Game:
             'settings': states.menu.Settings(self),
             'gameplay': states.gameplay.Gameplay(self),
             'pause': states.gameplay.Pause(self, 'Pause'),
-            'shop': states.gameplay.Shop(self, title='Shop')
+            'shop': states.gameplay.Shop(self, title='Shop'),
+            'game_over': states.gameplay.GameOver(self)
         }
         self.current_state = self.states['main_menu']
         self.current_state.on_enter() 
 
-    def change_gun(self, gun):
+    def change_gun(self, gun, sound=True):
         if gun in self.available_weapons:
             self.current_gun.kill()
             self.current_gun = self.available_weapons[gun]((self.all_sprites, self.bullet_sprites), self.player)
-            self.play_sound('gun_swap')
+            if sound:
+                self.play_sound('gun_swap')
 
     def play_sound(self, name):
         self.sound.sounds[name].play()

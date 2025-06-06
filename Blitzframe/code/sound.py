@@ -39,11 +39,11 @@ class Sound:
         self.prev_state = self.state
         self.state = self.game.current_state.music_state
         
-        for sound in self.music.values():
-            sound.set_volume(self.game.volume*1.5)
+        for music in self.music.values():
+            music.set_volume(self.game.music_volume*1.5)
             
         for sound in self.sounds.values():
-            sound.set_volume(self.game.volume*1.5)
+            sound.set_volume(self.game.sounds_volume*1.5)
             
         for sound in self.step_sounds.values():
-            sound.set_volume(self.game.volume*1.5)
+            sound.set_volume(self.game.sounds_volume*1.5 * 5)
