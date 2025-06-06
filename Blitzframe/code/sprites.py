@@ -230,7 +230,7 @@ class Player(Sprite):
 # =============== enemies ====================
         
 class Enemy(AnimatedSprite):
-    def __init__(self, groups, pos, frames, player, collision_sprites, health_multiplier=1, speed_multiplier=1, damage_multiplier=1):
+    def __init__(self, groups, pos, frames, player: Player, collision_sprites, health_multiplier=1, speed_multiplier=1, damage_multiplier=1):
         super().__init__(groups, pos, frames)
         self.death_timer = Timer(200, func=self.kill)
         self.player = player
@@ -244,6 +244,8 @@ class Enemy(AnimatedSprite):
             self.speed = self.base_speed
             self.damage = self.base_damage
         self.deal_damage_timer = Timer(1000, func=reset_speed)
+        self.bump_timer = Timer(0)
+        self.bump_dir_locked = False
 
     
         # rect
@@ -271,28 +273,51 @@ class Enemy(AnimatedSprite):
         self.image = pygame.mask.from_surface(self.image).to_surface()
         self.image.set_colorkey('black')
     
+
     def collision(self, direction):
         for sprite in self.collision_sprites:
             if sprite.rect.colliderect(self.hitbox_rect):
                 if direction == 'horizontal':
-                    if self.direction.x > 0: self.hitbox_rect.right = sprite.rect.left
-                    if self.direction.x < 0: self.hitbox_rect.left = sprite.rect.right
-                else:
-                    if self.direction.y > 0: self.hitbox_rect.bottom = sprite.rect.top
-                    if self.direction.y < 0: self.hitbox_rect.top = sprite.rect.bottom
+                    if self.direction.x > 0:
+                        self.hitbox_rect.right = sprite.rect.left
+                    elif self.direction.x < 0:
+                        self.hitbox_rect.left = sprite.rect.right
+                elif direction == 'vertical':
+                    if self.direction.y > 0:
+                        self.hitbox_rect.bottom = sprite.rect.top
+                    elif self.direction.y < 0:
+                        self.hitbox_rect.top = sprite.rect.bottom
+
+                # временное обходное направление
+                if not self.bump_timer:
+                    offset = pygame.Vector2(self.player.rect.center) - pygame.Vector2(self.rect.center)
+
+                    if direction == 'horizontal':
+                        self.direction = pygame.Vector2(0, -1 if offset.y < 0 else 1)
+                    else:
+                        self.direction = pygame.Vector2(-1 if offset.x < 0 else 1, 0)
+
+                    obstacle_size = max(sprite.rect.width, sprite.rect.height)
+                    duration = int(obstacle_size * 9)
+                    self.bump_timer = Timer(duration)
+                    self.bump_timer.activate()
+
+
+
     
     def move(self, dt):
-        # get direction
-        player_pos = pygame.Vector2(self.player.rect.center) 
-        enemy_pos = pygame.Vector2(self.rect.center)
-        
-        self.direction = (player_pos - enemy_pos).normalize()
-        
-        # udpate rect pos + collisions    
-        self.hitbox_rect.x += self.direction.x * self.speed*dt
+        if not self.bump_timer:
+            player_pos = pygame.Vector2(self.player.rect.center) 
+            enemy_pos = pygame.Vector2(self.rect.center)
+            self.direction = (player_pos - enemy_pos).normalize()
+
+        # Движение и столкновение
+        self.hitbox_rect.x += self.direction.x * self.speed * dt
         self.collision('horizontal')
-        self.hitbox_rect.y += self.direction.y * self.speed*dt
+
+        self.hitbox_rect.y += self.direction.y * self.speed * dt
         self.collision('vertical')
+
         self.rect.center = self.hitbox_rect.center
         
     
@@ -314,6 +339,10 @@ class Enemy(AnimatedSprite):
         self.death_timer.update()
         
         if not self.death_timer:
+            if self.bump_timer:
+                self.bump_timer.update()
+                if not self.bump_timer:
+                    self.bump_timer = None  # сброс ссылки после деактивации
             self.deal_damage_timer.update()
             self.move(dt)
             self.animate(dt)
