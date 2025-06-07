@@ -3,6 +3,8 @@ from ui import *
 from support import *
 
 import pygame
+import json
+import os
 
 class Background:
     def __init__(self, image_path, scale, screen_size, speed=20):
@@ -44,7 +46,6 @@ class MainMenu:
     def __init__(self, game):
         self.game = game
         self.display_surface = pygame.display.get_surface()
-        self.font = pygame.font.Font(None, 50)
 
     def on_enter(self):
         self.create_buttons()
@@ -67,33 +68,21 @@ class Menu(MainMenu):
         self.start_game_button = Button(
             groups=(self.game.buttons_sprites),
             pos=(WINDOW_WIDTH//2, WINDOW_HEIGHT//3),
-            text='New game',
-            font=self.font,
-            size=(300, 100),
-            bg_color='#CA7842',
-            text_color='#4B352A'
+            image=self.game.buttons_frames['new_game']
         )
 
         # settings
         self.settings_button = Button(
             groups=(self.game.buttons_sprites),
             pos=(self.start_game_button.rect.centerx, self.start_game_button.rect.centery + self.start_game_button.rect.height + 50),
-            text='Settings',
-            font=self.font,
-            size=(300, 100),
-            bg_color='#CA7842',
-            text_color='#4B352A'
+            image=self.game.buttons_frames['settings']
         )
 
         # exit game
         self.exit_button = Button(
             groups=(self.game.buttons_sprites),
             pos=(self.settings_button.rect.centerx, self.settings_button.rect.centery + self.settings_button.rect.height + 50),
-            text='Exit game',
-            font=self.font,
-            size=(300, 100),
-            bg_color='#CA7842',
-            text_color='#4B352A'
+            image=self.game.buttons_frames['exit']
         )
 
 
@@ -110,6 +99,52 @@ class Menu(MainMenu):
             self.game.running = False
             
 
+    def draw_score(self):
+        # Размеры и позиция окна
+        window_width = 480
+        window_height = 400
+        window_x = 0
+        window_y = WINDOW_HEIGHT/2 - WINDOW_HEIGHT/5 
+        self.window_rect = pygame.Rect(window_x, window_y, window_width, window_height)
+
+        window_surf = pygame.Surface(self.window_rect.size, pygame.SRCALPHA)
+        window_surf.fill((0, 0, 0, 0))
+        rect = window_surf.get_rect()
+        pygame.draw.rect(
+            window_surf,
+            (50, 50, 50, 150),
+            rect,
+            border_top_left_radius=0,
+            border_bottom_left_radius=0,
+            border_top_right_radius=20,
+            border_bottom_right_radius=20
+        )
+        self.display_surface.blit(window_surf, self.window_rect.topleft)
+
+        # Заголовок
+        font = self.game.s_font 
+        title_surf = font.render("Лучшие результаты", True, (255, 255, 255))
+        title_rect = title_surf.get_rect(midtop=(self.window_rect.left + self.window_rect.width // 2, self.window_rect.top + 15))
+        self.display_surface.blit(title_surf, title_rect)
+
+
+        scores = load_json(join('settings', 'score.json'))
+
+
+        # Отрисовка результатов
+        entry_font = self.game.xs_font 
+        start_y = self.window_rect.top + 90
+        line_height = 46
+        for i, (key, entry) in enumerate(sorted(scores.items(), key=lambda x: int(x[0]))):
+            if i < 6:
+                text = f"{key}. Волны: {entry['waves']}  Убийства: {entry['kills']}  Очки: {entry['total']}"
+                entry_surf = entry_font.render(text, True, (220, 220, 220))
+                entry_rect = entry_surf.get_rect(left=self.window_rect.left + 20, top=start_y + i * line_height)
+                self.display_surface.blit(entry_surf, entry_rect)
+
+    def draw(self):
+        super().draw()
+        self.draw_score()
 
     def update(self, dt):
         super().update(dt)
@@ -128,8 +163,8 @@ class Settings(MainMenu):
             pos=(WINDOW_WIDTH/2, WINDOW_HEIGHT//3),
             size=(300, 20),
             initial_value=self.game.sounds_volume,
-            label_text='Effects volume:',
-            label_font=self.font
+            label_text='Громкость эффектов:',
+            label_font=self.game.m_font
         )
         
         # music volume 
@@ -138,19 +173,15 @@ class Settings(MainMenu):
             pos=(WINDOW_WIDTH/2, WINDOW_HEIGHT//3 + 100),
             size=(300, 20),
             initial_value=self.game.music_volume,
-            label_text='Music volume:',
-            label_font=self.font
+            label_text='Громкость музыки:',
+            label_font=self.game.m_font
         )
         
         # back to menu
         self.back_to_menu_button = Button(
             groups=(self.game.buttons_sprites),
-            pos=(100, 70),
-            text='<--',
-            font=self.font,
-            size=(75, 40),
-            bg_color='#CA7842',
-            text_color='#4B352A'
+            pos=(150, 100),
+            image=self.game.buttons_frames['back']
         )
 
 

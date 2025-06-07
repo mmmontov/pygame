@@ -298,7 +298,7 @@ class Enemy(AnimatedSprite):
                         self.direction = pygame.Vector2(-1 if offset.x < 0 else 1, 0)
 
                     obstacle_size = max(sprite.rect.width, sprite.rect.height)
-                    duration = int(obstacle_size * 9)
+                    duration = int(obstacle_size * 11)
                     self.bump_timer = Timer(duration)
                     self.bump_timer.activate()
 

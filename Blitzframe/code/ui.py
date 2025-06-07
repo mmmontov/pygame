@@ -3,8 +3,8 @@ from settings import *
         
         
 class Button(pygame.sprite.Sprite):
-    def __init__(self, groups, pos: tuple[int], text: str, font: pygame.Font, size=(200, 50), 
-                 bg_color='white', text_color='black', callback=''):
+    def __init__(self, groups, pos: tuple[int], text: str='', font: pygame.Font=None, size=(200, 50), 
+                 bg_color='white', text_color='black', callback='', image: pygame.Surface = None):
         super().__init__(groups)
         self.pos = pos
         self.width = size[0]
@@ -16,17 +16,19 @@ class Button(pygame.sprite.Sprite):
         self.visible = True
         self.callback = callback
         self.was_hovered = False
-        
-        
-        self.image = pygame.Surface(size)
-        self.rect = self.image.get_frect(center = pos)
-        
-        self.render_text()
-        
+        self.custom_image = image
+
+        if self.custom_image:
+            self.image = self.custom_image.copy()
+        else:
+            self.image = pygame.Surface(size)
+            self.render_text()
+
+        self.rect = self.image.get_frect(center=pos)
+
         # sounds
         self.hover_sound = pygame.mixer.Sound(join('sounds', 'sounds', 'hover.mp3'))
         self.click_sound = pygame.mixer.Sound(join('sounds', 'sounds', 'click.mp3'))
-        
 
     def is_clicked(self):
         mouse_pos = pygame.mouse.get_pos()
@@ -35,25 +37,32 @@ class Button(pygame.sprite.Sprite):
         if click:
             self.click_sound.play()
             return click
-             
-             
+
     def hover(self):
         mouse_pos = pygame.mouse.get_pos()
         if self.rect.collidepoint(mouse_pos):
             if not hasattr(self, 'was_hovered') or not self.was_hovered:
                 self.hover_sound.play()
             self.was_hovered = True
-            overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
-            pygame.draw.ellipse(overlay, (100, 100, 100, 30), overlay.get_rect())
-            self.render_text()  
-            self.image.blit(overlay, (0, 0))
+            if self.custom_image:
+                self.image = self.custom_image.copy()
+                overlay = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
+                pygame.draw.ellipse(overlay, (100, 100, 100, 30), overlay.get_rect())
+                self.image.blit(overlay, (0, 0))
+            else:
+                self.render_text()
+                overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+                pygame.draw.ellipse(overlay, (100, 100, 100, 30), overlay.get_rect())
+                self.image.blit(overlay, (0, 0))
         else:
-            self.render_text()
+            if self.custom_image:
+                self.image = self.custom_image.copy()
+            else:
+                self.render_text()
             self.was_hovered = False
-        
-        
+
     def render_text(self):
-        if self.visible:
+        if self.visible and not self.custom_image:
             self.image.fill(self.bg_color)
             text_surf = self.font.render(self.text, True, self.text_color)
             text_rect = text_surf.get_frect(center=(self.width/2, self.height/2))
@@ -161,7 +170,7 @@ class Slider(pygame.sprite.Sprite):
         
 def draw_text_window(surface, pos, text, font=None, padding=20, bg_color='#cccccc', text_color='black', border_radius=10):
     if not font:
-        font = pygame.font.Font(None, 30)
+        font = pygame.font.Font(join('fonts', 'PixCyrillic.ttf'), 25)
     text_surf = font.render(text, True, text_color)
     text_rect = text_surf.get_rect()
     width = text_rect.width + padding * 2

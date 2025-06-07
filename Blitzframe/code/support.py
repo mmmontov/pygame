@@ -144,6 +144,35 @@ class FadeText:
 			surface.blit(self.text_surf, self.text_rect)
 
 
-def load_json(filepath):
+def calculate_total_score(kills, waves):
+	kills_mul = 2
+	waves_mul = 10
+	return kills * kills_mul + waves * waves_mul
+
+def load_json(filepath) -> dict:
 	with open(filepath, 'r', encoding='utf-8') as f:
 		return json.load(f)
+
+
+def write_json(filepath, data):
+	with open(filepath, 'w', encoding='utf-8') as f:
+		json.dump(data, f, ensure_ascii=False, indent=4)
+
+def write_score(kills, waves, total):
+    path = join('settings', 'score.json')
+    stats = {'kills': kills,
+			'waves': waves,
+			'total': total}
+    score = load_json(path)
+    if score:
+        best_scores = list(score.values())
+        best_scores.append(stats)
+        best_scores.sort(reverse=True, key=lambda x: x['total'])
+        if len(best_scores) > 10: del best_scores[-1]
+        
+    else:
+        best_scores = [stats]
+    
+    score = {key: value for key, value in enumerate(best_scores, start=1)}
+    write_json(path, score)
+        

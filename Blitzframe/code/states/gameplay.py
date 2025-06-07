@@ -150,7 +150,7 @@ class Gameplay:
         self.game_stats.wave_active = True
         # draw wave number
         surface = pygame.display.get_surface()
-        font = pygame.font.Font(None, 80)
+        font = self.game.l_font
         x, y = surface.width//2, 70
         self.fade_text = FadeText(f'Wave {self.game_stats.wave}', font, (82, 61, 80), (x, y))
         self.fade_text.start()
@@ -169,13 +169,25 @@ class Gameplay:
         for enemy_name, enemy_num in wave_settings['enemies'].items():
             for _ in range(enemy_num):
                 
+                # Фильтруем спавнеры, оставляя только те, что далеко от игрока
+                def choice_spawner(min_distance=600):
+                    player_pos = self.game.player.rect.center
+                    spawners = [
+                        pos for pos in self.game.tilemap.enemy_spawner()
+                        if ((pos[0] - player_pos[0]) ** 2 + (pos[1] - player_pos[1]) ** 2) ** 0.5 > min_distance
+                    ]
+                    if not spawners:
+                        spawners = self.game.tilemap.enemy_spawner()
+                    spawner = choice(spawners)
+                    return spawner
+                
                 self.spawn_timers.append(Timer(
                     random.randint(1000, self.game_stats.wave * 1000), 
                     False, 
                     True, 
                     lambda enemy_name = enemy_name: enemies_dict[enemy_name]((
                         self.game.all_sprites, self.game.enemy_sprites), 
-                        choice(self.game.tilemap.enemy_spawner()),
+                        choice_spawner(700),
                         self.game.enemies_frames_dict[enemy_name],
                         self.game.player,
                         self.game.collision_sprites,
@@ -189,7 +201,7 @@ class Gameplay:
         self.game_stats.wave_active = False
         # draw wave congradulation
         surface = pygame.display.get_surface()
-        font = pygame.font.Font(None, 80)
+        font = self.game.l_font
         x, y = surface.width//2, 70
         self.fade_text = FadeText(f'Wave {self.game_stats.wave} complete!', font, (82, 61, 80), (x, y))
         self.fade_text.start()
@@ -261,7 +273,7 @@ class InGameWindow:
     def __init__(self, game, title='', size=(400, 300)):
         self.game = game
         self.display_surface = pygame.display.get_surface()
-        self.font = pygame.font.Font(None, 50)
+        self.font = self.game.m_font
         self.width, self.height = size
         self.bg_color = (30, 30, 30, 180)
         self.window_rect = pygame.Rect(0, 0, *size)
@@ -283,7 +295,7 @@ class InGameWindow:
         window_surf.fill((0, 0, 0, 0)) 
         pygame.draw.rect(
             window_surf,
-            (50, 50, 50, 220),
+            (50, 50, 50, 120),
             window_surf.get_rect(),
             border_radius=20  
         )
@@ -317,19 +329,13 @@ class Pause(InGameWindow):
         self.resume_game_button = Button(
             groups=self.game.buttons_sprites,
             pos=(self.window_rect.x + self.window_rect.width//2, self.window_rect.y + self.window_rect.height//3),
-            text='Resume',
-            font=self.font,
-            bg_color='#CA7842',
-            text_color='#4B352A'
+            image=self.game.buttons_frames['resume']
         )
         # main menu
         self.menu_button = Button(
             groups=self.game.buttons_sprites,
             pos=(self.window_rect.x + self.window_rect.width//2, self.window_rect.y + self.window_rect.height//3 + 100),
-            text='Menu',
-            font=self.font,
-            bg_color='#CA7842',
-            text_color='#4B352A'
+            image=self.game.buttons_frames['menu']
         )
 
     def input(self):
@@ -575,7 +581,7 @@ class Shop(InGameWindow):
                     
     def draw_stats(self):
         
-        font = pygame.font.Font(None, 36)
+        font = self.game.s_font
         color = (255, 255, 255)
 
         col = 1
@@ -672,6 +678,11 @@ class GameOver(InGameWindow):
         
     def on_enter(self):
         super().on_enter()
+        self.kills = self.game.game_stats.kills
+        self.waves = self.game.game_stats.wave
+        self.total = calculate_total_score(self.kills, self.waves)
+        
+        write_score(self.kills, self.waves, self.total)
         self.game.game_paused = True
         
     def create_buttons(self):
@@ -679,10 +690,7 @@ class GameOver(InGameWindow):
         self.menu_button = Button(
             groups=self.game.buttons_sprites,
             pos=(self.window_rect.x + self.window_rect.width//2, self.window_rect.y + self.window_rect.height//3 + 100),
-            text='Menu',
-            font=self.font,
-            bg_color='#CA7842',
-            text_color='#4B352A'
+            image=self.game.buttons_frames['menu']
         )
         
     def input(self):
@@ -692,27 +700,35 @@ class GameOver(InGameWindow):
 
     def draw_stats(self):
         
-        font = pygame.font.Font(None, 36)
+        font = self.game.s_font
         color = (255, 255, 255)
 
+        kills = self.game.game_stats.kills
+        waves = self.game.game_stats.wave
+        total = calculate_total_score(kills, waves)
         
         line_spacing = 40
-        
- 
         base_x = self.window_rect.centerx
-        base_y = self.window_rect.top + line_spacing*2 
 
 
         # kills 
-        kills_text = font.render(f"kills: {self.game.game_stats.kills}", True, color)
+        base_y = self.window_rect.top + line_spacing*1 
+        kills_text = font.render(f"kills: {self.kills}", True, color)
         kills_rect = kills_text.get_rect(center=(base_x, base_y))
         self.display_surface.blit(kills_text, kills_rect)
         
         # waves 
-        base_y = self.window_rect.top + line_spacing*3 
-        waves_text = font.render(f"waves: {self.game.game_stats.wave}", True, color)
+        base_y = self.window_rect.top + line_spacing*2 
+        waves_text = font.render(f"waves: {self.waves}", True, color)
         waves_rect = waves_text.get_rect(center=(base_x, base_y))
         self.display_surface.blit(waves_text, waves_rect)
+
+        # total
+        base_y = self.window_rect.top + line_spacing*3 
+        total_text = font.render(f"total: {self.total}", True, color)
+        total_rect = total_text.get_rect(center=(base_x, base_y))
+        self.display_surface.blit(total_text, total_rect)
+
 
     def draw(self):
         super().draw()

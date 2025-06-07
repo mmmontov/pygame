@@ -25,13 +25,16 @@ class Game:
         self.background = states.menu.Background('images/menu_background.png', scale=2, screen_size=screen_size)
 
         
+        
         # sounds
-        self.sounds_volume = 0.5
-        self.music_volume = 0.5
+        self.sounds_volume = 0.2
+        self.music_volume = 0.2
         self.sound = Sound(self)
         
 
     def reset_game(self):
+        
+        
         # Сбросить все игровые объекты и состояния
         self.game_paused = False
         self.all_sprites = AllSprites()
@@ -122,6 +125,16 @@ class Game:
             'normal': self.normal_enemy_frames,
             'fast': self.fast_enemy_frames
         }
+        
+        # ===== buttons =====
+        self.buttons_frames = folder_importer(join('images', 'buttons'))
+        
+        # ===== fonts =====
+        self.m_font = pygame.font.Font(join('fonts', 'PixCyrillic.ttf'), 40)
+        self.l_font = pygame.font.Font(join('fonts', 'PixCyrillic.ttf'), 80)
+        self.s_font = pygame.font.Font(join('fonts', 'PixCyrillic.ttf'), 30)
+        self.xs_font = pygame.font.Font(join('fonts', 'PixCyrillic.ttf'), 24)
+
         
     def run(self):
         while self.running:
