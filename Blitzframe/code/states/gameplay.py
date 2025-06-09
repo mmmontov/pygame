@@ -19,6 +19,8 @@ class InGameStats:
         self.wave_active = False
         
         # upgrades
+        self.heal_price = 30
+        
         self.health_upgrade = 100
         self.health_upgrade_step = 20
         self.health_level = (self.health_upgrade - 100) // self.health_upgrade_step + 1
@@ -393,11 +395,7 @@ class Shop(InGameWindow):
                     btn = Button(
                         groups=self.game.buttons_sprites,
                         pos=(x, y),
-                        text='Start wave',
-                        font=self.font,
-                        bg_color='#CA7842',
-                        text_color='#4B352A',
-                        size=(button_width, button_height),
+                        image=self.game.buttons_frames['start_wave'],
                         callback='next_wave'
                     )
                 
@@ -406,25 +404,17 @@ class Shop(InGameWindow):
                     btn = Button(
                         groups=self.game.buttons_sprites,
                         pos=(x, y),
-                        text='Heal',
-                        font=self.font,
-                        bg_color='#5A827E',
-                        text_color='#FAFFCA',
-                        size=(button_width, button_height),
+                        image=self.game.buttons_frames['heal'],
                         callback='heal_player'
                     )
-                
+
                 # ====== upgrades ======
                 # health upgrade
                 if row == 1 and col == 2:
                     btn = Button(
                         groups=self.game.buttons_sprites,
                         pos=(x, y),
-                        text=f'health +',
-                        font=self.font,
-                        bg_color='#CA7842',
-                        text_color='#4B352A',
-                        size=(button_width, button_height),
+                        image=self.game.buttons_frames['health_upgrade'],
                         callback='health_upgrade'  
                     )
                 # damage upgrade
@@ -432,11 +422,7 @@ class Shop(InGameWindow):
                     btn = Button(
                         groups=self.game.buttons_sprites,
                         pos=(x, y),
-                        text=f'damage +',
-                        font=self.font,
-                        bg_color='#CA7842',
-                        text_color='#4B352A',
-                        size=(button_width, button_height),
+                        image=self.game.buttons_frames['damage_upgrade'],
                         callback='damage_upgrade'  
                     )
                 # speed upgrade
@@ -444,11 +430,7 @@ class Shop(InGameWindow):
                     btn = Button(
                         groups=self.game.buttons_sprites,
                         pos=(x, y),
-                        text=f'speed +',
-                        font=self.font,
-                        bg_color='#CA7842',
-                        text_color='#4B352A',
-                        size=(button_width, button_height),
+                        image=self.game.buttons_frames['speed_upgrade'],
                         callback='speed_upgrade'  
                     )
                 
@@ -469,11 +451,7 @@ class Shop(InGameWindow):
                         btn = Button(
                             groups=self.game.buttons_sprites,
                             pos=(x, y),
-                            text=gun_name,
-                            font=self.font,
-                            bg_color='#CA7842',
-                            text_color='#4B352A',
-                            size=(button_width, button_height),
+                            image=self.game.buttons_frames[f'open_{gun_name}'],
                             callback=f'select_{gun_name}' 
                         )
                     else:
@@ -519,9 +497,8 @@ class Shop(InGameWindow):
                         
                     # heal player
                     if btn.callback == 'heal_player':
-                        price = 30
                         if self.game.player.health != self.game.player.max_health:
-                            if self.can_buy(price):
+                            if self.can_buy(self.game.game_stats.heal_price):
                                 self.game.player.health = self.game.player.max_health
                                 self.game.play_sound('heal')
                                 
@@ -581,8 +558,10 @@ class Shop(InGameWindow):
                     
     def draw_stats(self):
         
-        font = self.game.s_font
+        font: pygame.Font = self.game.s_font
         color = (255, 255, 255)
+        bttns_text_color = '#4B352A'
+
 
         col = 1
         start_row = 0
@@ -627,21 +606,25 @@ class Shop(InGameWindow):
         # ===== skill upgrade prices ======
         self.game.game_stats.next_upgrage_price()
         
-        for row in range(1, 4):
+        for row in range(0, 4):
             col = 2
             bttn = self.buttons[row][col]
-            base_x = bttn.rect.centerx - 140
+            base_x = bttn.rect.centerx - 50
             base_y = bttn.rect.centery 
+            if bttn.callback.split('_')[0] == 'heal':
+                heal_text = font.render(f"{self.game.game_stats.heal_price}$", True, bttns_text_color)
+                heal_rect = heal_text.get_rect(center=(base_x, base_y))
+                self.display_surface.blit(heal_text, heal_rect)
             if bttn.callback.split('_')[0] == 'health':
-                health_text = font.render(f"{self.game.game_stats.next_health_upgrade_price}$", True, color)
+                health_text = font.render(f"{self.game.game_stats.next_health_upgrade_price}$", True, bttns_text_color)
                 health_rect = health_text.get_rect(center=(base_x, base_y))
                 self.display_surface.blit(health_text, health_rect)
             if bttn.callback.split('_')[0] == 'damage':
-                damage_text = font.render(f"{self.game.game_stats.next_damage_upgrade_price}$", True, color)
+                damage_text = font.render(f"{self.game.game_stats.next_damage_upgrade_price}$", True, bttns_text_color)
                 damage_rect = damage_text.get_rect(center=(base_x, base_y))
                 self.display_surface.blit(damage_text, damage_rect)
             if bttn.callback.split('_')[0] == 'speed':
-                speed_text = font.render(f"{self.game.game_stats.next_speed_upgrade_price}$", True, color)
+                speed_text = font.render(f"{self.game.game_stats.next_speed_upgrade_price}$", True, bttns_text_color)
                 speed_rect = speed_text.get_rect(center=(base_x, base_y))
                 self.display_surface.blit(speed_text, speed_rect)
 
