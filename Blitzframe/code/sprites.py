@@ -508,7 +508,7 @@ class Shotgun(Gun):
         self.cooldown_timer = Timer(1200)
 
     def load_surf(self):
-        return pygame.image.load(join('images', 'guns', 'pistol.png')).convert_alpha()
+        return pygame.image.load(join('images', 'guns', 'shotgun.png')).convert_alpha()
 
     def create_bulet(self):
         if not self.cooldown_timer:
@@ -544,7 +544,7 @@ class SniperRifle(Gun):
         self.cooldown_timer = Timer(1000)
         
     def load_surf(self):
-        return pygame.image.load(join('images', 'guns', 'pistol.png')).convert_alpha()
+        return pygame.image.load(join('images', 'guns', 'sniper.png')).convert_alpha()
     
     def create_bulet(self):
         if not self.cooldown_timer:
@@ -573,7 +573,7 @@ class MachineGun(Gun):
         self.cooldown_timer = Timer(100)
         
     def load_surf(self):
-        return pygame.image.load(join('images', 'guns', 'pistol.png')).convert_alpha()
+        return pygame.image.load(join('images', 'guns', 'machine-gun.png')).convert_alpha()
     
     def create_bulet(self):
         if not self.cooldown_timer:
