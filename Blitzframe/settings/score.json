@@ -20,29 +20,29 @@
         "total": 728
     },
     "5": {
+        "kills": 210,
+        "waves": 11,
+        "total": 530
+    },
+    "6": {
         "kills": 181,
         "waves": 10,
         "total": 462
     },
-    "6": {
+    "7": {
         "kills": 146,
         "waves": 9,
         "total": 382
     },
-    "7": {
+    "8": {
         "kills": 108,
         "waves": 8,
         "total": 296
     },
-    "8": {
+    "9": {
         "kills": 55,
         "waves": 6,
         "total": 170
-    },
-    "9": {
-        "kills": 1,
-        "waves": 1,
-        "total": 12
     },
     "10": {
         "kills": 1,
