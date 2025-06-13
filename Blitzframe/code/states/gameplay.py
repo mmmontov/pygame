@@ -360,6 +360,13 @@ class Shop(InGameWindow):
     music_state = 'shop'
     def __init__(self, game, title='Shop', size=(800, 520)):
         super().__init__(game, title, size)
+        self.all_guns = {
+                Pistol.gun_name: Pistol,
+                Shotgun.gun_name: Shotgun,
+                SniperRifle.gun_name: SniperRifle,
+                MachineGun.gun_name: MachineGun
+            }
+
 
     def on_enter(self):
         super().on_enter()
@@ -458,11 +465,7 @@ class Shop(InGameWindow):
                         btn = Button(
                             groups=self.game.buttons_sprites,
                             pos=(x, y),
-                            text=f'buy: {gun_name}',
-                            font=self.font,
-                            bg_color='#CA7842',
-                            text_color='#4B352A',
-                            size=(button_width, button_height),
+                            image=self.game.buttons_frames[f'locked_{gun_name}'],
                             callback=f'buy_{gun_name}' 
                         )
                 
@@ -478,12 +481,7 @@ class Shop(InGameWindow):
             return False
         
     def input(self):
-        self.all_guns = {
-                Pistol.gun_name: Pistol,
-                Shotgun.gun_name: Shotgun,
-                SniperRifle.gun_name: SniperRifle,
-                MachineGun.gun_name: MachineGun
-            }
+        
         
         for row in self.buttons:
             for btn in row:
@@ -543,7 +541,8 @@ class Shop(InGameWindow):
                         gun_name = btn.callback.split('_')[1]
                         price = self.all_guns[gun_name].price
                         if self.can_buy(price):
-                            btn.text = gun_name
+                            btn.image=self.game.buttons_frames[f'open_{gun_name}']
+                            btn.custom_image = btn.image
                             btn.callback = f'select_{gun_name}'
                             self.game.available_weapons[gun_name] = self.all_guns[gun_name]
                             self.game.change_gun(gun_name)
@@ -561,7 +560,7 @@ class Shop(InGameWindow):
         font: pygame.Font = self.game.s_font
         color = (255, 255, 255)
         bttns_text_color = '#4B352A'
-
+        guns_price_text_color = "#E21A1A"
 
         col = 1
         start_row = 0
@@ -603,7 +602,7 @@ class Shop(InGameWindow):
         self.display_surface.blit(current_gun, current_gun_rect)
 
         
-        # ===== skill upgrade prices ======
+        # ===== skill upgrade prices & guns prices ======
         self.game.game_stats.next_upgrage_price()
         
         for row in range(0, 4):
@@ -627,6 +626,16 @@ class Shop(InGameWindow):
                 speed_text = font.render(f"{self.game.game_stats.next_speed_upgrade_price}$", True, bttns_text_color)
                 speed_rect = speed_text.get_rect(center=(base_x, base_y))
                 self.display_surface.blit(speed_text, speed_rect)
+
+            col = 0
+            bttn = self.buttons[row][col]
+            base_x = bttn.rect.centerx
+            base_y = bttn.rect.centery+30
+            action, gun_name = bttn.callback.split('_') 
+            if action == 'buy':
+                cost_text = font.render(f"{self.all_guns[gun_name].price}$", True, guns_price_text_color)
+                cost_rect = cost_text.get_rect(center=(base_x, base_y))
+                self.display_surface.blit(cost_text, cost_rect)
 
         # ===== guns description =====
         for row in self.buttons:

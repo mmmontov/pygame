@@ -1,32 +1,52 @@
 {
     "1": {
+        "kills": 728,
+        "waves": 20,
+        "total": 1656
+    },
+    "2": {
         "kills": 458,
         "waves": 16,
         "total": 1076
     },
-    "2": {
+    "3": {
+        "kills": 406,
+        "waves": 15,
+        "total": 962
+    },
+    "4": {
+        "kills": 299,
+        "waves": 13,
+        "total": 728
+    },
+    "5": {
         "kills": 181,
         "waves": 10,
         "total": 462
     },
-    "3": {
+    "6": {
         "kills": 146,
         "waves": 9,
         "total": 382
     },
-    "4": {
+    "7": {
         "kills": 108,
         "waves": 8,
         "total": 296
     },
-    "5": {
+    "8": {
+        "kills": 55,
+        "waves": 6,
+        "total": 170
+    },
+    "9": {
         "kills": 1,
         "waves": 1,
         "total": 12
     },
-    "6": {
-        "kills": 0,
+    "10": {
+        "kills": 1,
         "waves": 1,
-        "total": 10
+        "total": 12
     }
 }

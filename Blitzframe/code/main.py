@@ -13,7 +13,7 @@ class Game:
     def __init__(self):
         # game init
         pygame.init()
-        self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.RESIZABLE)
+        self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.NOFRAME)
         pygame.display.set_caption('Blitzframe')
         self.clock = pygame.time.Clock()
         self.running = True
@@ -27,8 +27,8 @@ class Game:
         
         
         # sounds
-        self.sounds_volume = 0.2
-        self.music_volume = 0.2
+        self.sounds_volume = 0.1
+        self.music_volume = 0.1
         self.sound = Sound(self)
         
 
