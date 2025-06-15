@@ -560,8 +560,7 @@ class Shop(InGameWindow):
         font: pygame.Font = self.game.s_font
         color = (255, 255, 255)
         bttns_text_color = '#4B352A'
-        guns_price_text_color = "#E21A1A"
-
+        
         col = 1
         start_row = 0
         line_spacing = 40
@@ -627,13 +626,19 @@ class Shop(InGameWindow):
                 speed_rect = speed_text.get_rect(center=(base_x, base_y))
                 self.display_surface.blit(speed_text, speed_rect)
 
+
             col = 0
             bttn = self.buttons[row][col]
             base_x = bttn.rect.centerx
             base_y = bttn.rect.centery+30
             action, gun_name = bttn.callback.split('_') 
             if action == 'buy':
-                cost_text = font.render(f"{self.all_guns[gun_name].price}$", True, guns_price_text_color)
+                gun_price = self.all_guns[gun_name].price
+                if gun_price <= self.game.game_stats.money:
+                    guns_price_text_color = "#2BCD3B"
+                else:
+                    guns_price_text_color = "#E21A1A"
+                cost_text = font.render(f"{gun_price}$", True, guns_price_text_color)
                 cost_rect = cost_text.get_rect(center=(base_x, base_y))
                 self.display_surface.blit(cost_text, cost_rect)
 
