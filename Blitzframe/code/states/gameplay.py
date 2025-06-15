@@ -367,7 +367,6 @@ class Shop(InGameWindow):
                 MachineGun.gun_name: MachineGun
             }
 
-
     def on_enter(self):
         super().on_enter()
         self.game.game_paused = True
@@ -386,7 +385,6 @@ class Shop(InGameWindow):
         button_width = available_width // cols
         available_height = self.window_rect.height - vertical_margin_top - vertical_margin_bottom - (rows - 1) * button_spacing_y
         button_height = available_height // rows
-
 
         # матрица кнопок
         self.buttons = [[None for _ in range(cols)] for _ in range(rows)]
@@ -455,10 +453,15 @@ class Shop(InGameWindow):
                    
                 if gun_name: 
                     if gun_name in self.game.available_weapons:
+                        # выделяем выбранное оружие
+                        if self.game.current_gun.gun_name == gun_name:
+                            btn_image = self.game.buttons_frames[f'choosen_{gun_name}']
+                        else:
+                            btn_image = self.game.buttons_frames[f'open_{gun_name}']
                         btn = Button(
                             groups=self.game.buttons_sprites,
                             pos=(x, y),
-                            image=self.game.buttons_frames[f'open_{gun_name}'],
+                            image=btn_image,
                             callback=f'select_{gun_name}' 
                         )
                     else:
@@ -481,8 +484,6 @@ class Shop(InGameWindow):
             return False
         
     def input(self):
-        
-        
         for row in self.buttons:
             for btn in row:
                 btn: Button
@@ -500,9 +501,7 @@ class Shop(InGameWindow):
                                 self.game.player.health = self.game.player.max_health
                                 self.game.play_sound('heal')
                                 
-                        
                     # ====== upgrades ======
-                   
                     if btn.callback == 'health_upgrade':
                         price = self.game.game_stats.get_upgrade_price('health')
                         if self.can_buy(price):
@@ -531,30 +530,38 @@ class Shop(InGameWindow):
                             self.game.game_stats.update_skill_level()
                             self.game.player.speed = self.game.game_stats.speed_upgrade
 
-                            
-
                     # ====== guns ======
-                    if btn.callback.startswith('select_'):
+                    if btn.callback.startswith(('select_', 'buy_')):
                         gun_name = btn.callback.split('_')[1]
-                        self.game.change_gun(gun_name)
-                    if btn.callback.startswith('buy_'):
-                        gun_name = btn.callback.split('_')[1]
-                        price = self.all_guns[gun_name].price
-                        if self.can_buy(price):
-                            btn.image=self.game.buttons_frames[f'open_{gun_name}']
-                            btn.custom_image = btn.image
-                            btn.callback = f'select_{gun_name}'
-                            self.game.available_weapons[gun_name] = self.all_guns[gun_name]
+                        if btn.callback.startswith('select_'):
                             self.game.change_gun(gun_name)
-                            self.game.play_sound('buy_gun')
-        
-        
-            
-        
+                        if btn.callback.startswith('buy_'):
+                            price = self.all_guns[gun_name].price
+                            if self.can_buy(price):
+                                btn.image = self.game.buttons_frames[f'open_{gun_name}']
+                                btn.custom_image = btn.image
+                                btn.callback = f'select_{gun_name}'
+                                self.game.available_weapons[gun_name] = self.all_guns[gun_name]
+                                self.game.change_gun(gun_name)
+                                self.game.play_sound('buy_gun')
+                        # обновляем иконки
+                        self.update_gun_buttons_icons()
         
         if pygame.key.get_just_pressed()[pygame.K_t]:
             self.game.game_stats.money += 100                    
-                    
+
+    def update_gun_buttons_icons(self):
+        for row in self.buttons:
+            for btn in row:
+                if btn and btn.callback.startswith(('select_', 'buy_')):
+                    gun_name = btn.callback.split('_')[1]
+                    if btn.callback.startswith('select_'):
+                        if self.game.current_gun.gun_name == gun_name:
+                            btn.image = self.game.buttons_frames[f'choosen_{gun_name}']
+                        else:
+                            btn.image = self.game.buttons_frames[f'open_{gun_name}']
+
+
     def draw_stats(self):
         
         font: pygame.Font = self.game.s_font
@@ -646,13 +653,20 @@ class Shop(InGameWindow):
         for row in self.buttons:
             for btn in row:
                 btn: Button
-                if btn and btn.was_hovered and btn.callback.startswith(('select_', 'buy_')):
-                    alert_x = btn.rect.x - 20
-                    alert_y = btn.rect.centery
+                if btn:
                     gun_name = btn.callback.split('_')[1]
-                    text = self.all_guns[gun_name].description
-                    draw_text_window(self.game.display_surface, (alert_x, alert_y), text)
-
+                    # Обновляем иконку выбранного оружия
+                    if btn.callback.startswith('select_'):
+                        if self.game.current_gun.gun_name == gun_name:
+                            btn.image = self.game.buttons_frames[f'choosen_{gun_name}']
+                        else:
+                            btn.image = self.game.buttons_frames[f'open_{gun_name}']
+                        
+                    if btn.was_hovered and btn.callback.startswith(('select_', 'buy_')):
+                        alert_x = btn.rect.x - 20
+                        alert_y = btn.rect.centery
+                        text = self.all_guns[gun_name].description
+                        draw_text_window(self.game.display_surface, (alert_x, alert_y), text)
 
     def draw(self):
         super().draw()
@@ -664,7 +678,8 @@ class Shop(InGameWindow):
     def update(self, dt):
         super().update(dt)
         self.input()
-        
+        # обновляем иконки оружия
+        self.update_gun_buttons_icons()
         
 class GameOver(InGameWindow):
     state_name = 'game_over'
