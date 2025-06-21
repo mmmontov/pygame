@@ -1,6 +1,7 @@
 from settings import *
 import time
 import json
+import os
 
 
 class Timer:
@@ -176,3 +177,7 @@ def write_score(kills, waves, total):
     score = {key: value for key, value in enumerate(best_scores, start=1)}
     write_json(path, score)
         
+def create_score_json():
+	path = join('settings', 'score.json')
+	if not os.path.exists(path):
+		write_json(path, {})
