@@ -17,6 +17,7 @@ class Game:
         pygame.display.set_caption('Blitzframe')
         self.clock = pygame.time.Clock()
         self.running = True
+        create_score_json()
         
         self.reset_game()  # инициализация состояния игры
         
@@ -24,7 +25,6 @@ class Game:
         screen_size = pygame.display.get_surface().get_size()
         self.background = states.menu.Background('images/menu_background.png', scale=2, screen_size=screen_size)
 
-        
         
         # sounds
         self.sounds_volume = 0.1
