@@ -17,6 +17,7 @@ class AnimatedSprite(Sprite):
     def animate(self, dt):
         self.frame_index += self.animation_speed * dt
         frame = self.frames[str(int(self.frame_index) % len(self.frames))]
+        self.original_image = frame
         
         if hasattr(self, "direction") and self.direction.x > 0:
                 self.image = pygame.transform.flip(self.original_image, True, False)
